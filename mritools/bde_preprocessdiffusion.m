@@ -1,10 +1,6 @@
 function bde_preprocessdiffusion(basedir, t1dir, doMakeNifti, doPreProc)
-% BDE lab preprocessing for diffusion data
+% GLU MINI project adapted from: BDE lab preprocessing for diffusion data
 %
-% This is essoteric to our current diffusion acquisition which includes a
-% 32 direction acquisition (*DWI64_*.nii.gz) and a 64 direction acquisition
-% (*DWI64_*.nii.gz), and B0 images with a reversed phase encode
-% (*PA_*.nii.gz)
 %
 % Inputs
 % basedir     - path to the base directory with the raw data
@@ -15,11 +11,9 @@ function bde_preprocessdiffusion(basedir, t1dir, doMakeNifti, doPreProc)
 %
 % Example:
 %
-% basedir = '/mnt/diskArray/projects/MRI/NLR_204_AM'
-% t1dir = '/mnt/diskArray/projects/anatomy/NLR_204_AM'
+% basedir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011'
+% t1dir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/ret/S011/anat'
 %
-% t1dir = '/home/ehuber/analysis/anatomy/NLR_206_LM/';
-% basedir = '/home/ehuber/analysis/MRI/NLR_206_LM/20151119_CSD/';
 %
 % bde_preprocessdiffusion(basedir, t1dir)
 % TO DO: streamline multi subs, par to nifti function, sge, dim error

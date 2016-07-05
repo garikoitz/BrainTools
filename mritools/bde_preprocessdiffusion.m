@@ -13,10 +13,13 @@ function bde_preprocessdiffusion(basedir, t1dir, doMakeNifti, doPreProc)
 %
 % basedir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011'
 % t1dir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/ret/S011/anat'
-%
+%  doMakeNifti = 0;
+%  doPreproc = 1;
 %
 % bde_preprocessdiffusion(basedir, t1dir)
 % TO DO: streamline multi subs, par to nifti function, sge, dim error
+% 
+% Edited by GLU on June 2016
 
 %% Argument checking
 if ~exist('doMakeNifti','var') || isempty(doMakeNifti)
@@ -31,93 +34,95 @@ end
 rawdir = fullfile(basedir,'raw');
 if ~exist(rawdir, 'dir'), mkdir(rawdir), end
 
-% create nii.gz files from par/rec - do to: put this in a separate function
-if doMakeNifti
-    parFiles=dir(fullfile(rawdir,'*DWI*.PAR'));
-    for nn=1:length(parFiles)
-        inFile=fullfile(rawdir,parFiles(nn).name);
-        cmd = sprintf('parrec2nii --bvs -c --scaling=%s --store-header --output-dir=%s --overwrite %s', ...
-            'dv', rawdir, inFile);
-        system(cmd);
-    end
-end
 
-d64 = dir(fullfile(rawdir,'*DWI64_*.nii.gz'));
-d32 = dir(fullfile(rawdir,'*DWI32_*.nii.gz'));
-b0 = dir(fullfile(rawdir,'*PA_*.nii.gz')); % grab post-anterior encoded file 
-% b0 = dir(fullfile(rawdir,'*DWI6_*.nii.gz'));
+% Note glu: conversion from dicom in the ipython notebook file with qsubs
+d30 = dir(fullfile(rawdir,'*d35b1000*.nii'));
+d60 = dir(fullfile(rawdir,'*d65b2500*.nii'));
+b0 = dir(fullfile(rawdir,'*d6b0*.nii')); % grab post-anterior encoded file 
+
 
 % temp: note that this pulls only 1 of each file type, some subjects have
 % e.g. repeated measures for 64 or 32 dir data in a session
-dMRI64Files{1}=fullfile(rawdir,d64(1).name);
-dMRI32Files{1}=fullfile(rawdir,d32(1).name);
+% Note glu: he dejado solo uno en cada caso para evitar estos problemas
+dMRI60Files{1}=fullfile(rawdir,d64(1).name);
+dMRI30Files{1}=fullfile(rawdir,d32(1).name);
 
 % Add the b0 with the reversed phase encode
 for ii = 1:length(b0)
-    dMRI64Files{1+ii}=fullfile(rawdir,b0(ii).name);
-    dMRI32Files{1+ii}=fullfile(rawdir,b0(ii).name);
+    dMRI60Files{1+ii}=fullfile(rawdir,b0(ii).name);
+    dMRI30Files{1+ii}=fullfile(rawdir,b0(ii).name);
 end
 
 % Bvals and Bvecs files
 for ii = 1:length(dMRI64Files)
-    bvals64{ii} = [prefix(prefix(dMRI64Files{ii})) '.bvals'];
-    bvecs64{ii} = [prefix(prefix(dMRI64Files{ii})) '.bvecs'];
-    bvals32{ii} = [prefix(prefix(dMRI32Files{ii})) '.bvals'];
-    bvecs32{ii} = [prefix(prefix(dMRI32Files{ii})) '.bvecs'];
+    bvals60{ii} = [prefix(prefix(dMRI60Files{ii})) '_bvals'];
+    bvecs60{ii} = [prefix(prefix(dMRI60Files{ii})) '_bvecs'];
+    bvals30{ii} = [prefix(prefix(dMRI30Files{ii})) '_bvals'];
+    bvecs30{ii} = [prefix(prefix(dMRI30Files{ii})) '_bvecs'];
 end
 
 % Phase encode matrix. This denotes, for each volume, which direction is
 % the phase encode
-%pe_mat = [0 1 0; 0 1 0; 0 -1 0];
-pe_mat = [0 1 0; 0 -1 0];
+% Edit GLU: See here the info used for MINI data in Siemens TRIO
+% http://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TOPUP/Faq
+% We have 5xb0 + 30 dirs & 5xb0 + 60 dirs with one A>>P
+% and 6xb0 with P>>A
+% The dwell time is exactly the same of the example = 0.095 
+% (Calculated from echo spacing 0.75 and EPI factor 128)
+pe_mat = [0 -1 0; 0 1 0];
 
 % Directory to save everything
-outdir64 = fullfile(basedir,'dmri64');
-outdir32 = fullfile(basedir,'dmri32');
+outdir60 = fullfile(basedir,'dmri60');
+outdir30 = fullfile(basedir,'dmri30');
 
 % break
 
 %% Pre process: This is mostly done with command line calls to FSL
 if doPreProc
-    fsl_preprocess(dMRI64Files, bvecs64, bvals64, pe_mat, outdir64);
-    fsl_preprocess(dMRI32Files, bvecs32, bvals32, pe_mat, outdir32);
+    fsl_preprocess(dMRI60Files, bvecs60, bvals60, pe_mat, outdir60);
+    fsl_preprocess(dMRI30Files, bvecs30, bvals30, pe_mat, outdir30);
 end
 
 %% Run dtiInit to fit tensor model
-% Now run dtiInit. We turn off motion and eddy current correction because
-% that was taken care of by FSL
+% Turn off motion and eddy current correction, that was taken care of by FSL
 
-% First for 64 dir data
+% Set up t1 path and the params that are common
+t1 = fullfile(t1dir,'t1_acpc.nii.gz'); % Path to the t1-weighted image
 params = dtiInitParams; % Set up parameters for controlling dtiInit
-dtEddy = fullfile(outdir64,'eddy','data.nii.gz'); % Path to the data
-params.bvalsFile = fullfile(outdir64,'eddy','bvals'); % Path to bvals
-params.bvecsFile = fullfile(outdir64,'eddy','bvecs'); % Path to the bvecs
 params.eddyCorrect=-1; % This turns off eddy current and motion correction
-%params.outDir = fullfile(basedir,'dti64');
-params.rotateBvecsWithCanXform=1; % Phillips data requires this to be 1
-params.phaseEncodeDir=2; % AP phase encode
+params.rotateBvecsWithCanXform=1; % Siemens data requires this to be 1
+params.phaseEncodeDir=2; % AP phase encode, 1 is for R>>L (2 = A/P 'col')
 params.clobber=1; % Overwrite anything previously done
 params.fitMethod='rt'; % 'ls, or 'rt' for robust tensor fitting (longer)
-t1 = fullfile(t1dir,'t1_acpc.nii.gz'); % Path to the t1-weighted image
+
+% First for 60 dir data 
+dtEddy = fullfile(outdir60,'eddy','data.nii.gz'); % Path to the data
+params.bvalsFile = fullfile(outdir60,'eddy','bvals'); % Path to bvals
+params.bvecsFile = fullfile(outdir60,'eddy','bvecs'); % Path to the bvecs
 dt6FileName{1} = dtiInit(dtEddy,t1,params); % Run dtiInit to preprocess data
 
-% Then for 32 dir data
-dtEddy = fullfile(outdir32,'eddy','data.nii.gz'); % Path to the data
-params.bvalsFile = fullfile(outdir32,'eddy','bvals'); % Path to bvals
-params.bvecsFile = fullfile(outdir32,'eddy','bvecs'); % Path to the bvecs
+% Then for 30 dir data
+dtEddy = fullfile(outdir30,'eddy','data.nii.gz'); % Path to the data
+params.bvalsFile = fullfile(outdir30,'eddy','bvals'); % Path to bvals
+params.bvecsFile = fullfile(outdir30,'eddy','bvecs'); % Path to the bvecs
 dt6FileName{2} = dtiInit(dtEddy,t1,params); % Run dtiInit to preprocess data
 
 %% Run AFQ
 
 % Cell array with paths to the dt6 directories
 % % dt6dirs = horzcat(fileparts(dt6FileName{1}), fileparts(dt6FileName{2}));
+
+
 dt6dirs = horzcat({fileparts(dt6FileName{1}{1})}, {fileparts(dt6FileName{2}{1})});
-afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'clip2rois', 0);
+
+% afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'clip2rois', 0);
 % To run AFQ in test mode so it will go quickly
 % afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'run_mode','test');
 
 % To run AFQ using mrtrix for tractography
-% afq = AFQ_Create('sub_dirs',fileparts(dt6FileName{1}),'sub_group',0,'computeCSD',1);
+afq = AFQ_Create('sub_dirs',dt6dirs,...
+                 'sub_group',[0 0],...
+                 'computeCSD',1);
 afq = AFQ_run([],[],afq);
 
 % TO DO: integrate parallel version:

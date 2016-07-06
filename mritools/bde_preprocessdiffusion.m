@@ -130,10 +130,17 @@ afq = AFQ_run([],[],afq);
 
 
 % Find the VOF per every subject
-wholebrainfgPath= [fileparts(dt6FileName{1}{1}) dti60trilin]; 
-L_arcuate= ;
-R_arcuate= ;
-fsROIdir= ;
+wholebrainfgPath= '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin/fibers'; 
+fgMori = dtiReadFibers('MoriGroups.mat')
+L_arcuate= fgMori(19);
+R_arcuate= fgMori(20);
+% Create lables from freesurfer. But this is has been ac-pc-ed, I think I should
+% ac-pc the aparc+aseg as well.
+  fsIn   = '/path/to/aparc+aseg.mgz';
+  outDir = '/save/directory/rois';
+  type   = 'mat';
+  refT1  = '/path/to/t1Anatomical.nii.gz';
+  fs_roisFromAllLabels(fsIn,outDir,type,refT1);fsROIdir= ;
 outdir= ;
 thresh= ;
 v_crit= ;

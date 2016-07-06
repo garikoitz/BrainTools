@@ -43,9 +43,9 @@ b0 = dir(fullfile(rawdir,'*d6b0*.nii')); % grab post-anterior encoded file
 
 % temp: note that this pulls only 1 of each file type, some subjects have
 % e.g. repeated measures for 64 or 32 dir data in a session
-% Note glu: he dejado solo uno en cada caso para evitar estos problemas
-dMRI60Files{1}=fullfile(rawdir,d64(1).name);
-dMRI30Files{1}=fullfile(rawdir,d32(1).name);
+% Note glu: just left one type per every subject to avoid problems
+dMRI60Files{1}=fullfile(rawdir,d60(1).name);
+dMRI30Files{1}=fullfile(rawdir,d30(1).name);
 
 % Add the b0 with the reversed phase encode
 for ii = 1:length(b0)
@@ -114,6 +114,9 @@ dt6FileName{2} = dtiInit(dtEddy,t1,params); % Run dtiInit to preprocess data
 
 
 dt6dirs = horzcat({fileparts(dt6FileName{1}{1})}, {fileparts(dt6FileName{2}{1})});
+% dt6dirs = horzcat({'/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin'},{'/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri30/dti30trilin'})
+
+
 
 % afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'clip2rois', 0);
 % To run AFQ in test mode so it will go quickly
@@ -124,6 +127,33 @@ afq = AFQ_Create('sub_dirs',dt6dirs,...
                  'sub_group',[0 0],...
                  'computeCSD',1);
 afq = AFQ_run([],[],afq);
+
+
+% Find the VOF per every subject
+wholebrainfgPath= [fileparts(dt6FileName{1}{1}) dti60trilin]; 
+L_arcuate= ;
+R_arcuate= ;
+fsROIdir= ;
+outdir= ;
+thresh= ;
+v_crit= ;
+dt= ;
+savefiles= ;
+arcThresh= ;
+parcThresh= ;
+% [L_VOF, R_VOF, L_pArc, R_pArc, L_pArc_vot, R_pArc_vot] = ...
+%                                 AFQ_FindVOF(wholebrainfgPath,...
+%                                             L_arcuate,...
+%                                             R_arcuate,...
+%                                             fsROIdir,...
+%                                             outdir,...
+%                                             thresh,...
+%                                             v_crit, ...
+%                                             dt, ...
+%                                             savefiles, ...
+%                                             arcThresh, ...
+%                                             parcThresh)
+
 
 % TO DO: integrate parallel version:
 % afq = AFQ_run_sge_LH(afq, 2, 3); %tmp

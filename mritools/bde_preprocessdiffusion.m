@@ -129,13 +129,45 @@ afq = AFQ_Create('sub_dirs',dt6dirs,...
 afq = AFQ_run([],[],afq);
 
 
-% Find the VOF per every subject
+%% Find the VOF per every subject
 wholebrainfgPath= '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin/fibers'; 
 fgMori = dtiReadFibers('MoriGroups.mat')
 L_arcuate= fgMori(19);
 R_arcuate= fgMori(20);
 % Create lables from freesurfer. But this is has been ac-pc-ed, I think I should
-% ac-pc the aparc+aseg as well.
+% ac-pc the aparc+aseg as well. Use the same code used for ribbon
+% TODO: fix it for every subject and for the cluster
+fs_SUBJECTS_DIR = '/bcbl/home/public/Gari/MINI/ANALYSIS/freesurfer';
+subName = 'S011';
+path2anat = '/bcbl/home/public/Gari/MINI/ANALYSIS/ret/S011/anat';
+subjID = fullfile(fs_SUBJECTS_DIR, subName, 'mri', 'aparc+aseg.mgz');
+subjID2009 = fullfile(fs_SUBJECTS_DIR, subName, 'mri', 'aparc.a2009s+aseg.mgz');
+outfile     = fullfile(path2anat, 't1_aparcaseg.nii.gz');
+outfile2009     = fullfile(path2anat, 't1_aparcaseg2009.nii.gz');
+fillWithCSF = true;
+alignTo     = fullfile(path2anat, 't1.nii.gz');
+resample_type = [];
+system(['mri_convert  --out_orientation RAS --reslice_like ' alignTo ...
+         ' ' subjID ' ' outfile]);
+system(['mri_convert  --out_orientation RAS --reslice_like ' alignTo ...
+         ' ' subjID2009 ' ' outfile2009]);
+% And now do the ac-pc using the xform we already had
+aparc = matchfiles(fullfile(path2anat, 't1_aparcaseg.nii.gz'));
+aparc2009 = matchfiles(fullfile(path2anat, 't1_aparcaseg2009.nii.gz'));
+acpcMatrix = load(fullfile(path2anat, 'xform2acpc.mat'));
+NameOfAcpcFile = 't1_class_std_acpc';
+acpcOutfile     = fullfile(path2anat, 't1_aparcaseg_std_acpc.nii.gz');
+acpcOutfile2009     = fullfile(path2anat, 't1_aparcaseg2009_std_acpc.nii.gz');
+T1acpc = fullfile(path2anat, 't1_std_acpc.nii.gz');
+mrAnatAverageAcpcNifti(aparc, acpcOutfile, acpcMatrix.alignLandmarks);
+mrAnatAverageAcpcNifti(aparc2009, acpcOutfile2009, acpcMatrix.alignLandmarks);
+close all;
+
+
+
+
+
+
   fsIn   = '/path/to/aparc+aseg.mgz';
   outDir = '/save/directory/rois';
   type   = 'mat';

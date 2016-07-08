@@ -130,10 +130,7 @@ afq = AFQ_run([],[],afq);
 
 
 %% Find the VOF per every subject
-wholebrainfgPath= '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin/fibers'; 
-fgMori = dtiReadFibers('MoriGroups.mat')
-L_arcuate= fgMori(19);
-R_arcuate= fgMori(20);
+
 % Create lables from freesurfer. But this is has been ac-pc-ed, I think I should
 % ac-pc the aparc+aseg as well. Use the same code used for ribbon
 % TODO: fix it for every subject and for the cluster
@@ -162,36 +159,40 @@ T1acpc = fullfile(path2anat, 't1_std_acpc.nii.gz');
 mrAnatAverageAcpcNifti(aparc, acpcOutfile, acpcMatrix.alignLandmarks);
 mrAnatAverageAcpcNifti(aparc2009, acpcOutfile2009, acpcMatrix.alignLandmarks);
 close all;
+% It is not working, the rotation changes the labels names, talk to Eugenio
+path2anat= '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/ret/S011/anat';
+fsIn   = fullfile(path2anat, 'aparc+aseg.mgz');
+outDir = fullfile(path2anat,'aparcRoi');
+if ~exist(outDir, 'dir'), mkdir(outDir), end
+type   = 'nifti';
+refT1  = fullfile(path2anat, 'T1.mgz');
+fs_roisFromAllLabels(fsIn,outDir,type,refT1);
 
-
-
-
-
-
-  fsIn   = '/path/to/aparc+aseg.mgz';
-  outDir = '/save/directory/rois';
-  type   = 'mat';
-  refT1  = '/path/to/t1Anatomical.nii.gz';
-  fs_roisFromAllLabels(fsIn,outDir,type,refT1);fsROIdir= ;
-outdir= ;
-thresh= ;
-v_crit= ;
-dt= ;
-savefiles= ;
-arcThresh= ;
-parcThresh= ;
-% [L_VOF, R_VOF, L_pArc, R_pArc, L_pArc_vot, R_pArc_vot] = ...
-%                                 AFQ_FindVOF(wholebrainfgPath,...
-%                                             L_arcuate,...
-%                                             R_arcuate,...
-%                                             fsROIdir,...
-%                                             outdir,...
-%                                             thresh,...
-%                                             v_crit, ...
-%                                             dt, ...
-%                                             savefiles, ...
-%                                             arcThresh, ...
-%                                             parcThresh)
+wholebrainfgPath= '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin/fibers/WholeBrainFG.mat'; 
+fgMori = dtiReadFibers(fullfile(wholebrainfgPath, 'MoriGroups.mat'));
+L_arcuate= fgMori(19);
+R_arcuate= fgMori(20);
+fsROIdir= outDir;
+outdir = fullfile(wholebrainfgPath,'VOF');
+if ~exist(outdir, 'dir'), mkdir(outdir), end
+thresh= [];
+v_crit= [];
+dt= dtiLoadDt6('/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin/dt6.mat');
+savefiles= true;
+arcThresh= [];
+parcThresh= [];
+[L_VOF, R_VOF, L_pArc, R_pArc, L_pArc_vot, R_pArc_vot] = ...
+                                AFQ_FindVOF(wholebrainfgPath,...
+                                            L_arcuate,...
+                                            R_arcuate,...
+                                            fsROIdir,...
+                                            outdir,...
+                                            thresh,...
+                                            v_crit, ...
+                                            dt, ...
+                                            savefiles, ...
+                                            arcThresh, ...
+                                            parcThresh)
 
 
 % TO DO: integrate parallel version:

@@ -1,4 +1,4 @@
-function fsl_preprocess(dwi_files, bvecs_file, bvals_file, pe_dir, outdir)
+function fsl_preprocess(dwi_files, bvecs_file, bvals_file, pe_dir, outdir,dwellTime)
 % Correct for EPI distortions, eddy currents and motion with FSL
 %
 % dwi_files  = Cell array of paths to niftis with alternating PE directions
@@ -70,7 +70,7 @@ for ii = 1:length(nb0)
 end
 % The fourth column is the readout dwell time thing. This should be read
 % from the images....
-pe(1:end,4) = .095;  % BCBL Mini project = 0.095, Jason Seattle 0.0651
+pe(1:end,4) = dwellTime;  % BCBL Mini project = 0.095, Jason Seattle 0.0651
 acq_file=fullfile(outdir,'acqparams.txt');
 dlmwrite(acq_file,pe,'\t');
 

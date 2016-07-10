@@ -18,36 +18,19 @@ function bde_preprocessdiffusion(subName, DWIdir, retdir)
 % mritools/batch_fslpreprocessdiffusion.m, which has been adapted from
 % here. 
 
+
+% I moved everything that was single subject to batch_fslpreprocessdiffusion,
+% now here I just have to do the AFQ create but for a large set of subjects. 
+
+
+
+
 %% Set up directories and find files
 basedir = fullfile(DWIdir, subName)
 rawdir = fullfile(basedir,'raw');
 dmridir = fullfile(basedir,'dmri');
 t1dir = fullfile(retdir, subName, 'anat');
-
-
-%% Run dtiInit to fit tensor model
-% Turn off motion and eddy current correction, that was taken care of by FSL
-
-% Set up t1 path and the params that are common
-t1 = fullfile(t1dir,'t1_std_acpc.nii.gz'); % Path to the t1-weighted image
-copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
-params = dtiInitParams; % Set up parameters for controlling dtiInit
-params.eddyCorrect=-1; % This turns off eddy current and motion correction
-params.rotateBvecsWithCanXform=1; % Siemens data requires this to be 1
-params.phaseEncodeDir=2; % AP phase encode, 1 is for R>>L (2 = A/P 'col')
-params.clobber=1; % Overwrite anything previously done
-params.fitMethod='rt'; % 'ls, or 'rt' for robust tensor fitting (longer)
-
-
-dtEddy = fullfile(dmridir,'eddy','data.nii.gz'); % Path to the data
-params.bvalsFile = fullfile(dmridir,'eddy','bvals'); % Path to bvals
-params.bvecsFile = fullfile(dmridir,'eddy','bvecs'); % Path to the bvecs
-
-dt6FileName = dtiInit(dtEddy,t1,params); % Run dtiInit to preprocess data
-
-
-
-
+copiedt1 = fullfile(dmridir, 't1_std_acpc.nii.gz');
 
 
 
@@ -61,7 +44,7 @@ dt6FileName = dtiInit(dtEddy,t1,params); % Run dtiInit to preprocess data
 % dt6dirs = horzcat({'/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin'},{'/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri30/dti30trilin'})
 dt6dirs = horzcat({fileparts(dt6FileName{1})});
 %dt6dirs = horzcat({'/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/S002/dmri/dti90trilin'});
-
+%dt6dirs = horzcat({'/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri/dti90trilin'});
 
 % afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'clip2rois', 0);
 % To run AFQ in test mode so it will go quickly
@@ -70,9 +53,10 @@ dt6dirs = horzcat({fileparts(dt6FileName{1})});
 % To run AFQ using mrtrix for tractography
 afq = AFQ_Create('sub_dirs',dt6dirs,...
                  'sub_group', [0], ...
-                 'sub_names', ['S002'],...
+                 'sub_names', ['S011'],...
                  'computeCSD',1);
 afq = AFQ_run([],[],afq);
+save(fullfile(basedir, 'afqOut'), 'afq')
 
 
 %% Find the VOF per every subject
@@ -144,5 +128,5 @@ parcThresh= [];
 % TO DO: integrate parallel version:
 % afq = AFQ_run_sge_LH(afq, 2, 3); %tmp
 
-save(fullfile(basedir, 'afqOut'), 'afq')
+
 

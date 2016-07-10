@@ -24,6 +24,8 @@ basedir = fullfile(DWIdir,subName);
 rawdir = fullfile(DWIdir,subName, 'raw');
 if ~exist(rawdir, 'dir'), mkdir(rawdir), end
 t1dir = fullfile(retdir, subName, 'anat');
+dmridir = fullfile(basedir,'dmri');
+
 
 % Note glu: conversion from dicom in the ipython notebook file with qsubs
 d30 = dir(fullfile(rawdir,'*d35b1000*.nii'));
@@ -85,6 +87,50 @@ outdir = fullfile(basedir,'dmri');
 
 %% Pre process: This is mostly done with command line calls to FSL
 fsl_preprocess(dMRIFiles, bvecs, bvals, pe_mat, outdir, dwellTime);
+
+%% Run dtiInit to fit tensor model
+% Turn off motion and eddy current correction, that was taken care of by FSL
+
+% Set up t1 path and the params that are common
+t1 = fullfile(t1dir,'t1_std_acpc.nii.gz'); % Path to the acpc t1-weighted image
+copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
+params = dtiInitParams; % Set up parameters for controlling dtiInit
+params.eddyCorrect=-1; % This turns off eddy current and motion correction
+params.rotateBvecsWithCanXform=1; % Siemens data requires this to be 1
+params.phaseEncodeDir=2; % AP phase encode, 1 is for R>>L (2 = A/P 'col')
+params.clobber=1; % Overwrite anything previously done
+params.fitMethod='rt'; % 'ls, or 'rt' for robust tensor fitting (longer)
+
+
+dtEddy = fullfile(dmridir,'eddy','data.nii.gz'); % Path to the data
+params.bvalsFile = fullfile(dmridir,'eddy','bvals'); % Path to bvals
+params.bvecsFile = fullfile(dmridir,'eddy','bvecs'); % Path to the bvecs
+
+dt6FileName = dtiInit(dtEddy,t1,params); % Run dtiInit to preprocess data
+
+%% Run AFQ
+
+% Cell array with paths to the dt6 directories
+% % dt6dirs = horzcat(fileparts(dt6FileName{1}), fileparts(dt6FileName{2}));
+
+
+% dt6dirs = horzcat({fileparts(dt6FileName{1}{1})}, {fileparts(dt6FileName{2}{1})});
+% dt6dirs = horzcat({'/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin'},{'/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri30/dti30trilin'})
+dt6dirs = horzcat({fileparts(dt6FileName{1})});
+%dt6dirs = horzcat({'/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/S002/dmri/dti90trilin'});
+%dt6dirs = horzcat({'/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri/dti90trilin'});
+
+% afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'clip2rois', 0);
+% To run AFQ in test mode so it will go quickly
+% afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'run_mode','test');
+
+% To run AFQ using mrtrix for tractography
+afq = AFQ_Create('sub_dirs',dt6dirs,...
+                 'sub_group', [0], ...
+                 'sub_names', [subName],...
+                 'computeCSD',1);
+afq = AFQ_run([],[],afq);
+save(fullfile(session, 'afqOut'), 'afq')
 
 
 

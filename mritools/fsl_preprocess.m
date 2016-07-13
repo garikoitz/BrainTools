@@ -125,8 +125,18 @@ if ~exist('eddy','dir')
     mkdir('eddy');
 end
 outname = 'eddy/eddy_corrected_data';
-cmd = sprintf('eddy --imain=dMRI_cat.nii.gz --mask=topup_b0_brain_mask.nii.gz --acqp=acqparams.txt --index=index.txt --bvecs=bvecs_cat.bvec --bvals=bvals_cat.bval --topup=topup_results --out=%s --flm=quadratic --niter=%d --verbose',...
-    outname,8);
+cmd = ['eddy_openmp ' ...
+       '--imain=dMRI_cat.nii.gz ' ...
+       '--mask=topup_b0_brain_mask.nii.gz ' ...
+       '--acqp=acqparams.txt ' ...
+       '--index=index.txt ' ...
+       '--bvecs=bvecs_cat.bvec --bvals=bvals_cat.bval ' ...
+       '--topup=topup_results ' ...
+       '--out=' outname ' ' ...
+       '--flm=quadratic ' ...
+       '--niter=' num2str(8) ' ' ...
+       '--verbose']; 
+
 system(cmd);
 % rotate bvecs - first load eddy paramters
 b = dlmread([outname '.eddy_parameters']);
@@ -141,19 +151,19 @@ copyfile('bvals_cat.bval','eddy/bvals');
 movefile([outname '.nii.gz'],'eddy/data.nii.gz')
 copyfile('topup_b0_brain_mask.nii.gz', 'eddy/nodif_brain_mask.nii.gz')
 
-%% Run dtifit
-eddyNii   = fullfile(pwd,'eddy/data.nii.gz');
-eddyBvecs = fullfile(pwd,'eddy/bvecs');
-eddyBvals = fullfile(pwd,'eddy/bvals');
-mask      = fullfile(pwd,'eddy/nodif_brain_mask.nii.gz');
-dtidir    = fullfile(pwd,'dtifit');
-dtiOut    = fullfile(dtidir,'dti');
-if ~exist(dtidir,'dir')
-    mkdir(dtidir);
-end
-cmd = sprintf('dtifit --data=%s --out=%s --mask=%s --bvecs=%s --bvals=%s',...
-    eddyNii, dtiOut, mask, eddyBvecs, eddyBvals);
-system(cmd);
+%% Run dtifit: no deberia hacer esto, yo tengo multishell
+% eddyNii   = fullfile(pwd,'eddy/data.nii.gz');
+% eddyBvecs = fullfile(pwd,'eddy/bvecs');
+% eddyBvals = fullfile(pwd,'eddy/bvals');
+% mask      = fullfile(pwd,'eddy/nodif_brain_mask.nii.gz');
+% dtidir    = fullfile(pwd,'dtifit');
+% dtiOut    = fullfile(dtidir,'dti');
+% if ~exist(dtidir,'dir')
+%     mkdir(dtidir);
+% end
+% cmd = sprintf('dtifit --data=%s --out=%s --mask=%s --bvecs=%s --bvals=%s',...
+%     eddyNii, dtiOut, mask, eddyBvecs, eddyBvals);
+% system(cmd);
 
 %% Run bedpostx
 %system('bedpostx eddy')

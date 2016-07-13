@@ -1,4 +1,4 @@
-function batch_fslpreprocessdiffusion(subName, DWIdir, retdir, doPreProc, doDtiInit, doAfq)
+function batch_fslpreprocessdiffusion(subName, AnalysisDir, doPreProc, doDtiInit, doAfqCreate, doAfqRun)
 % GLU MINI project adapted from: BDE lab preprocessing for diffusion data
 %
 %
@@ -10,15 +10,14 @@ function batch_fslpreprocessdiffusion(subName, DWIdir, retdir, doPreProc, doDtiI
 % a previous step and we want to start right after it. 
 %
 % Example:
-%
-% DWIdir = '/bcbl/home/public/Gari/MINI/ANALYSIS/DWI'
-% DWIdir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI'
-% retdir = '/bcbl/home/public/Gari/MINI/ANALYSIS/ret'
-% retdir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/ret'
-% subName = 'S011'
+% 
+% AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS'
+% % AnalysisDir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS'
+% subName = 'S004'
 % doPreProc = 0
 % doDtiInit = 1
-% doAfq = 0
+% doAfqCreate = 1
+% doAfqRun = 1
 %
 % Edited by GLU on June 2016
 % update instructions
@@ -26,12 +25,15 @@ function batch_fslpreprocessdiffusion(subName, DWIdir, retdir, doPreProc, doDtiI
 
 
 %% Set up directories and find files
+DWIdir = fullfile(AnalysisDir, 'DWI');
+retdir = fullfile(AnalysisDir, 'ret');
+FSdir = fullfile(AnalysisDir, 'freesurfer');
 basedir = fullfile(DWIdir,subName);
 rawdir = fullfile(DWIdir,subName, 'raw');
 if ~exist(rawdir, 'dir'), mkdir(rawdir), end
 t1dir = fullfile(retdir, subName, 'anat');
 dmridir = fullfile(basedir,'dmri');
-
+aparcAsegDir = fullfile(FSdir, subName, 'mri');
 
 % Note glu: conversion from dicom in the ipython notebook file with qsubs
 d30 = dir(fullfile(rawdir,'*d35b1000*.nii'));
@@ -72,9 +74,18 @@ end
 %% Run dtiInit to fit tensor model
 % Turn off motion and eddy current correction, that was taken care of by FSL
 
+% GLU: I shouldn't fit the tensor model since I have the multishell data
+
+% OJO: decidir sobre el acpc o usar el de FS!
+
 % Set up t1 path and the params that are common
-t1 = fullfile(t1dir,'t1_std_acpc.nii.gz'); % Path to the acpc t1-weighted image
+% t1 = fullfile(t1dir,'t1_std_acpc.nii.gz'); % Path to the acpc t1-weighted image
+t1 = fullfile(t1dir,'t1.nii.gz');
 copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
+
+aparcAseg = fullfile(aparcAsegDir, 'aparc+aseg.mgz');
+copyfile(aparcAseg, dmridir);
+
 params = dtiInitParams; % Set up parameters for controlling dtiInit
 params.eddyCorrect=-1; % This turns off eddy current and motion correction
 params.rotateBvecsWithCanXform=1; % Siemens data requires this to be 1
@@ -109,16 +120,18 @@ dt6dirs = horzcat({fileparts(dt6FileName{1})});
 % afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'run_mode','test');
 
 % To run AFQ using mrtrix for tractography
-if doAfq
+if doAfqCreate
     afq = AFQ_Create('sub_dirs',dt6dirs,...
                      'sub_group', [0], ...
                      'sub_names', [subName],...
                      'computeCSD',1);
-
-    afq = AFQ_run([],[],afq);
-    save(fullfile(session, 'afqOut'), 'afq')
+    save(fullfile(basedir, 'afqOut'), 'afq')
 end
-
+if doAfqRun
+    load(fullfile(basedir, 'afqOut.mat'))
+    afq = AFQ_run([],[],afq);
+    save(fullfile(basedir, 'afqOut'), 'afq')
+end
 
 
 

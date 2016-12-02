@@ -11,13 +11,15 @@ function batch_fslpreprocessdiffusion(subName, AnalysisDir, doPreProc, doDtiInit
 %
 % Example:
 % 
+
 % AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS'
 % % AnalysisDir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS'
 % subName = 'S002'
+
 % doPreProc = 0
 % doDtiInit = 0
 % doAfqCreate = 1
-% doAfqRun = 1
+% doAfqRun = 0
 %
 % Edited by GLU on June 2016
 % update instructions
@@ -80,11 +82,16 @@ end
 
 % Set up t1 path and the params that are common
 % t1 = fullfile(t1dir,'t1_std_acpc.nii.gz'); % Path to the acpc t1-weighted image
+<<<<<<< Updated upstream
 t1 = fullfile(t1dir,'t1_std_acpc.nii.gz');
 copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
+=======
+t1 = fullfile(t1dir,'t1.nii.gz');
+% copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
+>>>>>>> Stashed changes
 
 aparcAseg = fullfile(aparcAsegDir, 'aparc+aseg.mgz');
-copyfile(aparcAseg, dmridir);
+% copyfile(aparcAseg, dmridir);
 
 params = dtiInitParams; % Set up parameters for controlling dtiInit
 params.eddyCorrect=-1; % This turns off eddy current and motion correction

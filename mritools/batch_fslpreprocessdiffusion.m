@@ -13,9 +13,9 @@ function batch_fslpreprocessdiffusion(subName, AnalysisDir, doPreProc, doDtiInit
 % 
 % AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS'
 % % AnalysisDir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS'
-% subName = 'S004'
+% subName = 'S002'
 % doPreProc = 0
-% doDtiInit = 1
+% doDtiInit = 0
 % doAfqCreate = 1
 % doAfqRun = 1
 %
@@ -27,7 +27,7 @@ function batch_fslpreprocessdiffusion(subName, AnalysisDir, doPreProc, doDtiInit
 %% Set up directories and find files
 DWIdir = fullfile(AnalysisDir, 'DWI');
 retdir = fullfile(AnalysisDir, 'ret');
-FSdir = fullfile(AnalysisDir, 'freesurfer');
+FSdir = fullfile(AnalysisDir, 'freesurferacpc');
 basedir = fullfile(DWIdir,subName);
 rawdir = fullfile(DWIdir,subName, 'raw');
 if ~exist(rawdir, 'dir'), mkdir(rawdir), end
@@ -80,7 +80,7 @@ end
 
 % Set up t1 path and the params that are common
 % t1 = fullfile(t1dir,'t1_std_acpc.nii.gz'); % Path to the acpc t1-weighted image
-t1 = fullfile(t1dir,'t1.nii.gz');
+t1 = fullfile(t1dir,'t1_std_acpc.nii.gz');
 copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
 
 aparcAseg = fullfile(aparcAsegDir, 'aparc+aseg.mgz');

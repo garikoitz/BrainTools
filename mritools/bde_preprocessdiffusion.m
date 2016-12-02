@@ -59,74 +59,33 @@ afq = AFQ_run([],[],afq);
 save(fullfile(basedir, 'afqOut'), 'afq')
 
 
-%% Find the VOF per every subject
-
-% Create lables from freesurfer. But this is has been ac-pc-ed, I think I should
-% ac-pc the aparc+aseg as well. Use the same code used for ribbon
-% TODO: fix it for every subject and for the cluster
-fs_SUBJECTS_DIR = '/bcbl/home/public/Gari/MINI/ANALYSIS/freesurfer';
-subName = 'S011';
-path2anat = '/bcbl/home/public/Gari/MINI/ANALYSIS/ret/S011/anat';
-subjID = fullfile(fs_SUBJECTS_DIR, subName, 'mri', 'aparc+aseg.mgz');
-subjID2009 = fullfile(fs_SUBJECTS_DIR, subName, 'mri', 'aparc.a2009s+aseg.mgz');
-outfile     = fullfile(path2anat, 't1_aparcaseg.nii.gz');
-outfile2009     = fullfile(path2anat, 't1_aparcaseg2009.nii.gz');
-fillWithCSF = true;
-alignTo     = fullfile(path2anat, 't1.nii.gz');
-resample_type = [];
-system(['mri_convert  --out_orientation RAS --reslice_like ' alignTo ...
-         ' ' subjID ' ' outfile]);
-system(['mri_convert  --out_orientation RAS --reslice_like ' alignTo ...
-         ' ' subjID2009 ' ' outfile2009]);
-% And now do the ac-pc using the xform we already had
-aparc = matchfiles(fullfile(path2anat, 't1_aparcaseg.nii.gz'));
-aparc2009 = matchfiles(fullfile(path2anat, 't1_aparcaseg2009.nii.gz'));
-acpcMatrix = load(fullfile(path2anat, 'xform2acpc.mat'));
-NameOfAcpcFile = 't1_class_std_acpc';
-acpcOutfile     = fullfile(path2anat, 't1_aparcaseg_std_acpc.nii.gz');
-acpcOutfile2009     = fullfile(path2anat, 't1_aparcaseg2009_std_acpc.nii.gz');
-T1acpc = fullfile(path2anat, 't1_std_acpc.nii.gz');
-mrAnatAverageAcpcNifti(aparc, acpcOutfile, acpcMatrix.alignLandmarks);
-mrAnatAverageAcpcNifti(aparc2009, acpcOutfile2009, acpcMatrix.alignLandmarks);
-close all;
-% It is not working, the rotation changes the labels names, talk to Eugenio
-path2anat= '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/ret/S011/anat';
-fsIn   = fullfile(path2anat, 'aparc+aseg.mgz');
-outDir = fullfile(path2anat,'aparcRoi');
-if ~exist(outDir, 'dir'), mkdir(outDir), end
-type   = 'nifti';
-refT1  = fullfile(path2anat, 'T1.mgz');
-fs_roisFromAllLabels(fsIn,outDir,type,refT1);
-
-wholebrainfgPath= '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin/fibers/WholeBrainFG.mat'; 
-fgMori = dtiReadFibers(fullfile(wholebrainfgPath, 'MoriGroups.mat'));
-L_arcuate= fgMori(19);
-R_arcuate= fgMori(20);
-fsROIdir= outDir;
-outdir = fullfile(wholebrainfgPath,'VOF');
-if ~exist(outdir, 'dir'), mkdir(outdir), end
-thresh= [];
-v_crit= [];
-dt= dtiLoadDt6('/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri60/dti60trilin/dt6.mat');
-savefiles= true;
-arcThresh= [];
-parcThresh= [];
-[L_VOF, R_VOF, L_pArc, R_pArc, L_pArc_vot, R_pArc_vot] = ...
-                                AFQ_FindVOF(wholebrainfgPath,...
-                                            L_arcuate,...
-                                            R_arcuate,...
-                                            fsROIdir,...
-                                            outdir,...
-                                            thresh,...
-                                            v_crit, ...
-                                            dt, ...
-                                            savefiles, ...
-                                            arcThresh, ...
-                                            parcThresh)
-
-
+                             
+                                        
+                                        
 % TO DO: integrate parallel version:
 % afq = AFQ_run_sge_LH(afq, 2, 3); %tmp
+
+
+
+
+
+%% Lanzar los sujetos que me faltan para el batch_fslpre...  con un parfor a ver si se quita la mierda del Image_Toolbox license error
+OnlyDoAfqRun = {'S095','S050','S069','S010','S016','S032','S087','S018','S075','S057','S055','S024','S071','S034','S059','S077','S091','S035','S090','S079','S005','S060','S041'};
+% myPool = parpool(length(OnlyDoAfqRun))
+% addAttachedFiles(myPool, ...
+%                  '/opt/matlab/R2014b/toolbox/matlab/lang/@char/exist');
+A = {'S034','S035','S041','S055','S057','S059','S060','S071','S075','S077','S079','S090','S091','S099'}
+A = {'S024'};
+parfor ii =1:length(A)
+    AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS';
+    subName = A{ii};
+    doPreProc = 0;
+    doDtiInit = 0;
+    doAfqCreate = 0;
+    doAfqRun = 1;
+    batch_fslpreprocessdiffusion(subName, AnalysisDir, doPreProc, ...
+                                 doDtiInit, doAfqCreate, doAfqRun);
+end
 
 
 

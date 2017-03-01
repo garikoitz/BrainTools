@@ -1,24 +1,33 @@
 %% Desde tractografia a ROI
 
-
+%% Inicializar
 % Despues de haber hecho el ROI analisis en funcional, mi objetivo en este
 % caso es el:
 % 1.- Encontrar las fibras del VOF y del poserior arcuate y del arcuate
 % 2.- HAcer conteo de fibras, caracteristicas, y crear ROIs de los tractos
 % 3.- Crear ROI-s individuales de donde estan llegando estos tractos
 
+clear all; close all; 
+fsp = filesep;
 
 % Folder Names
-fsp = filesep;
-AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS';
+% LOCAL
+MINIDIR = '/Users/gari/Documents/BCBL_PROJECTS/MINI';
+fsbin = '/Applications/freesurfer/bin';
+fshome = '/Applications/freesurfer'; 
+% SERVER
+% MINIDIR = '/bcbl/home/public/Gari/MINI';
+% fsbin = '/opt/freesurfer-5.3.0/freesurfer/bin';
+% fshome = '/opt/freesurfer-5.3.0/freesurfer'; 
+
+AnalysisDir = [MINIDIR fsp 'ANALYSIS'];
 fs_SUBJECTS_DIR = fullfile(AnalysisDir, 'freesurferacpc');
 DWIdir  = fullfile(AnalysisDir, 'DWI');
 cd(DWIdir);
 subs = dir('S*');
 retDIR = fullfile(AnalysisDir, 'ret');
 fMRIDIR = fullfile(AnalysisDir, 'fMRI_SPM', 'block', 'data');
-fsbin = '/opt/freesurfer-5.3.0/freesurfer/bin';
-fshome = '/opt/freesurfer-5.3.0/freesurfer'; 
+
       
 
 
@@ -37,7 +46,11 @@ fshome = '/opt/freesurfer-5.3.0/freesurfer';
 % parpool('ips_base', str2num(available))
 %%%%% END CLUSTER PARPOOL  %%%%%%
 
-for ns = 1 : length(subs)
+
+
+%% Encontrar VOF PARC y pasarlos a surfaces en fsaverage
+if(0)
+    for ns = 1 : length(subs)
     subname = subs(ns).name
 
     setenv('FREESURFER_HOME', fshome); 
@@ -52,7 +65,7 @@ for ns = 1 : length(subs)
 
 
 
-    % Create lables from freesurfer for every subject
+    % Create labels from freesurfer for every subject
     fsIn   = fullfile(dmridir, 'aparc+aseg.mgz');
     outDir = fullfile(dmridir,'ROIs');
     if ~exist(outDir, 'dir'), mkdir(outDir), end
@@ -93,7 +106,7 @@ for ns = 1 : length(subs)
     save(fullfile(outdir, 'VOF_all.mat'), ...
         'L_VOF', 'R_VOF', 'L_pArc', 'R_pArc', 'L_pArc_vot', 'R_pArc_vot');
     % % and now load them, just to be shure they work fine.
-    % load( fullfile(outdir, 'VOF_all.mat'));                                       
+    % load( fullfile(outdir, 'VOF_all.mat'));
     % 
     % %% RENDER
     % % Read the ROIs in the cortex
@@ -305,3 +318,144 @@ for ns = 1 : length(subs)
      end
 
 end
+end
+
+%% Convertir VOF y PARC a tcks para usar en mrtrix (se hizo a posteriori)
+if(1)
+    for ns = 1 : length(subs)
+    subname = subs(ns).name
+
+    setenv('FREESURFER_HOME', fshome); 
+
+    % Read the VOF per every subject
+    dmridir = fullfile(DWIdir, subname, 'dmri');
+    wholebrainfgPath= fullfile(dmridir, 'dti90trilin', 'fibers'); 
+    MRtrixPath= fullfile(dmridir, 'dti90trilin', 'mrtrix'); 
+    outdir = fullfile(wholebrainfgPath,'VOF');
+    cd(dmridir)
+    load( fullfile(outdir, 'VOF_all.mat'));
+    
+    % Create empty struct to put the tract data
+    tractData = struct(...
+                    'act', ['/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_aligned_trilin_noMEC_5tt.mif'], ...
+              'backtrack', '0', ...
+      'downsample_factor', '3', ...
+              'fod_power', '0.25', ...
+         'init_threshold', '0.100000001', ...
+                   'lmax', '8', ...
+              'max_angle', '45', ...
+       'max_num_attempts', '50000000', ...
+         'max_num_tracks', '500000', ...
+      'max_seed_attempts', '1', ...
+             'max_trials', '1000', ...
+                 'method', 'iFOD2', ...
+         'mrtrix_version', '0.3.15-65-gaeb862d2', ...
+       'output_step_size', '1', ...
+                    'rk4', '0', ...
+       'samples_per_step', '4', ...
+         'sh_precomputed', '1', ...
+                 'source', ['/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_aligned_trilin_noMEC_wmCsd_lmax4.mif'], ...
+              'step_size', '1', ...
+    'stop_on_all_include', '0', ...
+              'threshold', '0.100000001', ...
+              'timestamp', '1488215560.9647302628', ...
+         'unidirectional', '0', ...
+               'datatype', 'Float32LE', ...
+                  'count', num2str(size(cellfun(@transpose,L_VOF.fibers,'un',0), 1)), ...
+            'total_count', '500000', ...
+                   'data', {cellfun(@transpose,L_VOF.fibers,'un',0)'} );
+      tractData.data = cellfun(@transpose,L_VOF.fibers,'un',0)';
+      write_mrtrix_tracks(tractData, [MRtrixPath fsp 'afq_L_vOF.tck']);
+      % Now write the pAF
+      tractData.count = num2str(size(cellfun(@transpose,L_pArc.fibers,'un',0), 1));
+      tractData.data  = cellfun(@transpose,L_pArc.fibers,'un',0)';
+      write_mrtrix_tracks(tractData, [MRtrixPath fsp 'afq_L_pAF.tck']);
+end      
+end
+
+%% Convertir los avg sem y perc ROIs de VOT IFG PPC a individual space
+if(1)
+    ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
+             'VOT_perc_averages', 'VOT_sem_averages', ...
+             'IFG_perc_averages', 'IFG_sem_averages'};
+    dilateLabelBy = '1';
+    setenv('FREESURFER_HOME', fshome); 
+    setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
+    for ns = 1 : length(subs)
+        subname = subs(ns).name
+
+        for ROI = ROIs
+            roi = ROI{:};
+
+            iname = fullfile(fs_SUBJECTS_DIR, 'fsaverage', 'label', ...
+                                                ['lh.' roi dilateLabelBy '.label']);
+            oname = fullfile(fs_SUBJECTS_DIR, subname, 'label', ...
+                                                ['lh.' roi dilateLabelBy '.label']);
+
+
+           cmd = [fsbin fsp 'mri_label2label ' ...
+                   '--srcsubject fsaverage ' ...
+                   '--hemi lh ' ...
+                   '--srclabel '  iname   ' ' ...
+                   '--trgsubject '  subname  ' ' ...
+                   '--trglabel '  oname  ' ' ...
+                   '--regmethod surface '];
+            system(cmd)
+        end   
+    end   
+end
+      
+%% Crear los seis pares de tractos creando esferas en esos puntos
+if(1)    
+    ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
+             'VOT_perc_averages', 'VOT_sem_averages', ...
+             'IFG_perc_averages', 'IFG_sem_averages'};
+    tcktype       = {'sem', 'perc'};
+    connections   = {'VOT2IFG', 'VOT2PPC', 'PPC2IFG'};
+    dilateLabelBy = '1';
+    setenv('FREESURFER_HOME', fshome); 
+    setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
+    ROISphereRadius = [8,10,12];
+    WholeTractogramName = 'data_aligned_trilin_noMEC_wmCsd_lmax4_data_aligned_trilin_noMEC_wmMask_data_aligned_trilin_noMEC_wmMask_iFOD2-500000.tck';
+    for ns = 1 : length(subs)
+        subname = subs(ns).name
+        dmridir = fullfile(DWIdir, subname, 'dmri');
+        mrtrixdir = fullfile(dmridir, 'dti90trilin','mrtrix');
+        % T1std = MRIread([dmridir fsp  't1_std_acpc.nii.gz']);
+        T1 = MRIread([fs_SUBJECTS_DIR fsp  subname fsp 'mri' fsp 'T1.mgz']);
+        %% Convertimos los one vertex voxels al espacio individual
+        coords = struct();
+        for ROI = ROIs
+            roi = ROI{:};
+            label = read_label(subname, ['lh.' roi dilateLabelBy]);
+            surfRAS =  label(1, 2:4);
+            % Convertir desde surfaceRAS a scannerRas
+            scanRAS  =  T1.vox2ras  * inv(T1.tkrvox2ras) *  [surfRAS';1];
+            coords.([roi dilateLabelBy]) = scanRAS;
+        end   
+        %% Creamos los tractos con las esferas
+        for tckt = tcktype;for conn = connections;for sphR=ROISphereRadius
+            tctname = ['L_' tckt{:} '_' conn{:} '_R' num2str(sphR) '.tck'];
+            con1 = conn{:}(1:3);
+            coord1 = round(coords.([con1 '_' tckt{:} '_averages' dilateLabelBy])');
+            coord1(4) = sphR;
+            roi1 = strjoin(arrayfun(@(x) num2str(x),coord1,'UniformOutput',false),',');
+            
+            con2 = conn{:}(5:7);
+            coord2 = round(coords.([con2 '_' tckt{:} '_averages' dilateLabelBy])');
+            coord2(4) = sphR;
+            roi2 = strjoin(arrayfun(@(x) num2str(x),coord2,'UniformOutput',false),',');
+            
+            cmd = ['tckedit ' ...
+                   '-include ' roi1  ' ' ...
+                   '-include ' roi2  ' ' ...
+                   '-ends_only ' ... 
+                   [mrtrixdir filesep WholeTractogramName] ' ' ...
+                   [mrtrixdir filesep tctname]];
+            system(cmd)
+        end;end;end
+    end      
+end
+
+
+

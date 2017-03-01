@@ -1,4 +1,6 @@
-function batch_fslpreprocessdiffusion(subName, AnalysisDir, doPreProc, doDtiInit, doAfqCreate, doAfqRun)
+function batch_fslpreprocessdiffusion(subName, AnalysisDir, ...
+                                  doPreProc, doBias,...
+                                  doDtiInit, doAfqCreate, doAfqRun)
 % GLU MINI project adapted from: BDE lab preprocessing for diffusion data
 %
 %
@@ -68,27 +70,58 @@ dwellTime = 0.095;
 % Directory to save everything
 outdir = fullfile(basedir,'dmri');
 
-
-%% Pre process: This is mostly done with command line calls to FSL
+%% doPreProc: This is mostly done with command line calls to FSL
 if doPreProc
     fsl_preprocess(dMRIFiles, bvecs, bvals, pe_mat, outdir, dwellTime);
 end
-%% Run dtiInit to fit tensor model
+
+%% doBias: anadido a posteriori como parte de mrTrix quantitative analysis para obtener AFD
+% ESTO NO ESTA HECHO EN MINI, LO HICE EN UNO EN LOCAL PARA VER QUE FUNCIONA
+% DWI bias field correction is perfomed by first estimating a correction field 
+% from the DWI b=0 image, then applying the field to correct all DW volumes. 
+% This can be done in a single step using the dwibiascorrect script in MRtrix. 
+% The script uses bias field correction algorthims available in ANTS or FSL. 
+% In our experience the N4 algorithm in ANTS gives superiour results. 
+% To install N4 install the ANTS package, then run perform bias field correction 
+% on DW images using:
+
+% dmridir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S005/dmri'
+
+% Para esto hace falta mrtrix y ANTS instalados
+bvecs = fullfile(dmridir,'eddy','bvecs');
+bvals = fullfile(dmridir,'eddy','bvals');
+input_brain_mask = fullfile(dmridir,'eddy','nodif_brain_mask.nii.gz');
+input_dwi = fullfile(dmridir,'eddy','data.nii.gz');
+output_corrected_dwi = fullfile(dmridir,'eddy','biasdata.nii.gz');
+cmd = ['dwibiascorrect -ants ' ...
+       '-fslgrad ' bvecs ' ' bvals ' ' ...
+       '-mask ' input_brain_mask ' ' ...
+        input_dwi ' ' ...
+        output_corrected_dwi];   
+
+system(cmd);
+
+
+%% Global intensity normalisation across subjects
+% ESTO NO ESTA HECHO EN MINI, LO HICE EN UNO EN LOCAL PARA VER QUE FUNCIONA
+% Ahora hay que hacer esto pero en paralelo para todos los sujetos, o sea que
+% hay que llamar primero al batch con las opciones de arriba, hacer esto, y
+% luego seguir de doDtiInit para abajo. 
+
+%% Computing a group average response function
+% idem arriba
+
+%% doDtiInit: to fit tensor model (ACTUALIZAR 'dtEddy' CON LA SALIDA DE LO ANTERIOR
 % Turn off motion and eddy current correction, that was taken care of by FSL
 
 % GLU: I shouldn't fit the tensor model since I have the multishell data
 
-% OJO: decidir sobre el acpc o usar el de FS!
 
 % Set up t1 path and the params that are common
 % t1 = fullfile(t1dir,'t1_std_acpc.nii.gz'); % Path to the acpc t1-weighted image
-<<<<<<< Updated upstream
 t1 = fullfile(t1dir,'t1_std_acpc.nii.gz');
 copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
-=======
-t1 = fullfile(t1dir,'t1.nii.gz');
-% copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
->>>>>>> Stashed changes
+
 
 aparcAseg = fullfile(aparcAsegDir, 'aparc+aseg.mgz');
 % copyfile(aparcAseg, dmridir);
@@ -115,8 +148,8 @@ else
     end
     
 end
-%% Run AFQ
 
+%% doAfqCreate
 % Cell array with paths to the dt6 directories
 dt6dirs = horzcat({fileparts(dt6FileName{1})});
 %dt6dirs = horzcat({'/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/S002/dmri/dti90trilin'});
@@ -134,6 +167,8 @@ if doAfqCreate
                      'computeCSD',1);
     save(fullfile(basedir, 'afqOut'), 'afq')
 end
+
+%% doAfqCreate
 if doAfqRun
     load(fullfile(basedir, 'afqOut.mat'))
     afq = AFQ_run([],[],afq);

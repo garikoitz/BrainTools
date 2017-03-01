@@ -12,16 +12,17 @@ fsp = filesep;
 
 % Folder Names
 % LOCAL
-MINIDIR = '/Users/gari/Documents/BCBL_PROJECTS/MINI';
-fsbin = '/Applications/freesurfer/bin';
-fshome = '/Applications/freesurfer'; 
+% MINIDIR = '/Users/gari/Documents/BCBL_PROJECTS/MINI';
+% fsbin = '/Applications/freesurfer/bin';
+% fshome = '/Applications/freesurfer'; 
 % SERVER
-% MINIDIR = '/bcbl/home/public/Gari/MINI';
-% fsbin = '/opt/freesurfer-5.3.0/freesurfer/bin';
-% fshome = '/opt/freesurfer-5.3.0/freesurfer'; 
+MINIDIR = '/bcbl/home/public/Gari/MINI';
+fsbin = '/opt/freesurfer-5.3.0/freesurfer/bin';
+fshome = '/opt/freesurfer-5.3.0/freesurfer'; 
 
 AnalysisDir = [MINIDIR fsp 'ANALYSIS'];
 fs_SUBJECTS_DIR = fullfile(AnalysisDir, 'freesurferacpc');
+qmridir = fullfile(AnalysisDir, 'qMRI_acpc');
 DWIdir  = fullfile(AnalysisDir, 'DWI');
 cd(DWIdir);
 subs = dir('S*');
@@ -321,69 +322,72 @@ end
 end
 
 %% Convertir VOF y PARC a tcks para usar en mrtrix (se hizo a posteriori)
-if(1)
-    for ns = 1 : length(subs)
-    subname = subs(ns).name
+if(0)
+   for ns = 1 : length(subs) % no funcional parfor pero es rapido
+        subname = subs(ns).name
 
-    setenv('FREESURFER_HOME', fshome); 
+        setenv('FREESURFER_HOME', fshome); 
 
-    % Read the VOF per every subject
-    dmridir = fullfile(DWIdir, subname, 'dmri');
-    wholebrainfgPath= fullfile(dmridir, 'dti90trilin', 'fibers'); 
-    MRtrixPath= fullfile(dmridir, 'dti90trilin', 'mrtrix'); 
-    outdir = fullfile(wholebrainfgPath,'VOF');
-    cd(dmridir)
-    load( fullfile(outdir, 'VOF_all.mat'));
-    
-    % Create empty struct to put the tract data
-    tractData = struct(...
-                    'act', ['/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_aligned_trilin_noMEC_5tt.mif'], ...
-              'backtrack', '0', ...
-      'downsample_factor', '3', ...
-              'fod_power', '0.25', ...
-         'init_threshold', '0.100000001', ...
-                   'lmax', '8', ...
-              'max_angle', '45', ...
-       'max_num_attempts', '50000000', ...
-         'max_num_tracks', '500000', ...
-      'max_seed_attempts', '1', ...
-             'max_trials', '1000', ...
-                 'method', 'iFOD2', ...
-         'mrtrix_version', '0.3.15-65-gaeb862d2', ...
-       'output_step_size', '1', ...
-                    'rk4', '0', ...
-       'samples_per_step', '4', ...
-         'sh_precomputed', '1', ...
-                 'source', ['/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_aligned_trilin_noMEC_wmCsd_lmax4.mif'], ...
-              'step_size', '1', ...
-    'stop_on_all_include', '0', ...
-              'threshold', '0.100000001', ...
-              'timestamp', '1488215560.9647302628', ...
-         'unidirectional', '0', ...
-               'datatype', 'Float32LE', ...
-                  'count', num2str(size(cellfun(@transpose,L_VOF.fibers,'un',0), 1)), ...
-            'total_count', '500000', ...
-                   'data', {cellfun(@transpose,L_VOF.fibers,'un',0)'} );
-      tractData.data = cellfun(@transpose,L_VOF.fibers,'un',0)';
-      write_mrtrix_tracks(tractData, [MRtrixPath fsp 'afq_L_vOF.tck']);
-      % Now write the pAF
-      tractData.count = num2str(size(cellfun(@transpose,L_pArc.fibers,'un',0), 1));
-      tractData.data  = cellfun(@transpose,L_pArc.fibers,'un',0)';
-      write_mrtrix_tracks(tractData, [MRtrixPath fsp 'afq_L_pAF.tck']);
-end      
+        % Read the VOF per every subject
+        dmridir = fullfile(DWIdir, subname, 'dmri');
+        wholebrainfgPath= fullfile(dmridir, 'dti90trilin', 'fibers'); 
+        MRtrixPath= fullfile(dmridir, 'dti90trilin', 'mrtrix'); 
+        outdir = fullfile(wholebrainfgPath,'VOF');
+        cd(dmridir)
+        load( fullfile(outdir, 'VOF_all.mat'));
+
+        % Create empty struct to put the tract data
+        tractData = struct(...
+                        'act', ['/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_aligned_trilin_noMEC_5tt.mif'], ...
+                  'backtrack', '0', ...
+          'downsample_factor', '3', ...
+                  'fod_power', '0.25', ...
+             'init_threshold', '0.100000001', ...
+                       'lmax', '8', ...
+                  'max_angle', '45', ...
+           'max_num_attempts', '50000000', ...
+             'max_num_tracks', '500000', ...
+          'max_seed_attempts', '1', ...
+                 'max_trials', '1000', ...
+                     'method', 'iFOD2', ...
+             'mrtrix_version', '0.3.15-65-gaeb862d2', ...
+           'output_step_size', '1', ...
+                        'rk4', '0', ...
+           'samples_per_step', '4', ...
+             'sh_precomputed', '1', ...
+                     'source', ['/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_aligned_trilin_noMEC_wmCsd_lmax4.mif'], ...
+                  'step_size', '1', ...
+        'stop_on_all_include', '0', ...
+                  'threshold', '0.100000001', ...
+                  'timestamp', '1488215560.9647302628', ...
+             'unidirectional', '0', ...
+                   'datatype', 'Float32LE', ...
+                      'count', num2str(size(cellfun(@transpose,L_VOF.fibers,'un',0), 1)), ...
+                'total_count', '500000', ...
+                       'data', {cellfun(@transpose,L_VOF.fibers,'un',0)'} );
+          tractData.data = cellfun(@transpose,L_VOF.fibers,'un',0)';
+          write_mrtrix_tracks(tractData, [MRtrixPath fsp 'afq_L_vOF.tck']);
+          % Now write the pAF
+          tractData.count = num2str(size(cellfun(@transpose,L_pArc.fibers,'un',0), 1));
+          tractData.data  = cellfun(@transpose,L_pArc.fibers,'un',0)';
+          write_mrtrix_tracks(tractData, [MRtrixPath fsp 'afq_L_pAF.tck']);
+    end      
 end
 
 %% Convertir los avg sem y perc ROIs de VOT IFG PPC a individual space
-if(1)
-    ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
-             'VOT_perc_averages', 'VOT_sem_averages', ...
-             'IFG_perc_averages', 'IFG_sem_averages'};
-    dilateLabelBy = '1';
-    setenv('FREESURFER_HOME', fshome); 
-    setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
-    for ns = 1 : length(subs)
+if(0)
+    
+    parfor ns = 1 : length(subs)
+        ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
+                'VOT_perc_averages', 'VOT_sem_averages', ...
+                'IFG_perc_averages', 'IFG_sem_averages'};
+        dilateLabelBy = '1';
         subname = subs(ns).name
 
+          setenv('FREESURFER_HOME', fshome); 
+          setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
+        
+        
         for ROI = ROIs
             roi = ROI{:};
 
@@ -403,21 +407,30 @@ if(1)
             system(cmd)
         end   
     end   
+    
 end
       
 %% Crear los seis pares de tractos creando esferas en esos puntos
+% No he conseguido hacer funcionar mrtrix dentro de parfor...
 if(1)    
-    ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
-             'VOT_perc_averages', 'VOT_sem_averages', ...
-             'IFG_perc_averages', 'IFG_sem_averages'};
-    tcktype       = {'sem', 'perc'};
-    connections   = {'VOT2IFG', 'VOT2PPC', 'PPC2IFG'};
-    dilateLabelBy = '1';
-    setenv('FREESURFER_HOME', fshome); 
-    setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
-    ROISphereRadius = [8,10,12];
-    WholeTractogramName = 'data_aligned_trilin_noMEC_wmCsd_lmax4_data_aligned_trilin_noMEC_wmMask_data_aligned_trilin_noMEC_wmMask_iFOD2-500000.tck';
+
     for ns = 1 : length(subs)
+        ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
+                 'VOT_perc_averages', 'VOT_sem_averages', ...
+                 'IFG_perc_averages', 'IFG_sem_averages'};
+        tcktype       = {'sem', 'perc'};
+        connections   = {'VOT2IFG', 'VOT2PPC', 'PPC2IFG'};
+        dilateLabelBy = '1';
+        setenv('FREESURFER_HOME', fshome); 
+        setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
+        oldPath = getenv('PATH');
+        setenv('PATH', ...
+                ['/bcbl/home/home_g-m/glerma/GIT/mrtrix3/release/bin:' ...
+                '/bcbl/home/home_g-m/glerma/GIT/mrtrix3/scripts:' ...
+                oldPath]);
+
+        ROISphereRadius = [8,10,12];
+        WholeTractogramName = 'data_aligned_trilin_noMEC_wmCsd_lmax4_data_aligned_trilin_noMEC_wmMask_data_aligned_trilin_noMEC_wmMask_iFOD2-500000.tck';        
         subname = subs(ns).name
         dmridir = fullfile(DWIdir, subname, 'dmri');
         mrtrixdir = fullfile(dmridir, 'dti90trilin','mrtrix');
@@ -446,16 +459,111 @@ if(1)
             coord2(4) = sphR;
             roi2 = strjoin(arrayfun(@(x) num2str(x),coord2,'UniformOutput',false),',');
             
-            cmd = ['tckedit ' ...
-                   '-include ' roi1  ' ' ...
-                   '-include ' roi2  ' ' ...
-                   '-ends_only ' ... 
-                   [mrtrixdir filesep WholeTractogramName] ' ' ...
-                   [mrtrixdir filesep tctname]];
-            system(cmd)
+            cmd_str = ['tckedit ' ...
+                       '-include ' roi1  ' ' ...
+                       '-include ' roi2  ' ' ...
+                       '-ends_only ' ... 
+                         [mrtrixdir filesep WholeTractogramName] ' ' ...
+                         [mrtrixdir filesep tctname]];
+            bkgrnd = false;
+            verbose = false;
+            mrtrixVersion = 3;
+            AFQ_mrtrix_cmd(cmd_str, bkgrnd, verbose,mrtrixVersion)
+            
         end;end;end
-    end      
+    end
+    
 end
+
+
+%% Obtener las estadisticas
+% Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
+if(1)    
+    resultsFldr = fullfile(DWIdir, 'ResultsCSV');
+    for ns = 1 : length(subs)
+        ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
+                 'VOT_perc_averages', 'VOT_sem_averages', ...
+                 'IFG_perc_averages', 'IFG_sem_averages'};
+        tcktype       = {'sem', 'perc'};
+        connections   = {'VOT2IFG', 'VOT2PPC', 'PPC2IFG'};
+        dilateLabelBy = '1';
+        setenv('FREESURFER_HOME', fshome); 
+        setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
+        oldPath = getenv('PATH');
+        setenv('PATH', ...
+                ['/bcbl/home/home_g-m/glerma/GIT/mrtrix3/release/bin:' ...
+                '/bcbl/home/home_g-m/glerma/GIT/mrtrix3/scripts:' ...
+                oldPath]);
+
+        subname = subs(ns).name
+        dmridir = fullfile(DWIdir, subname, 'dmri');
+        mrtrixdir = fullfile(dmridir, 'dti90trilin','mrtrix');
+        faFile = fullfile(mrtrixdir, 'data_aligned_trilin_noMEC_fa.mif');
+        MTVfile = fullfile(qmridir,subname,'OutPutFiles_1','BrainMaps','TV_map.nii.gz');
+        T1qfile = fullfile(qmridir,subname,'OutPutFiles_1','BrainMaps','T1_map_Wlin.nii.gz');
+
+        
+           
+        %% Por cada tracto que hemos leido antes, escribimos stats
+%         ROISphereRadius = [12]; % 8 y 12 son muy pequeos, igual hasta meter 15
+%         for tckt = tcktype;for conn = connections;for sphR=ROISphereRadius
+%             tctname = ['L_' tckt{:} '_' conn{:} '_R' num2str(sphR) '.tck'];
+%             
+%             tckFile = [mrtrixdir filesep tctname];
+%             csvFA  = fullfile(resultsFldr,['FA_' tctname '_' subname '.csv']);
+%             csvMTV = fullfile(resultsFldr,['MTV_' tctname '_' subname '.csv']);
+%             csvT1q = fullfile(resultsFldr,['T1q_' tctname '_' subname '.csv']);
+%             
+%             cmdFA  = ['tcksample -stat_tck mean ' tckFile ' ' faFile ' ' csvFA];
+%             cmdMTV = ['tcksample -stat_tck mean ' tckFile ' ' MTVfile ' ' csvMTV];
+%             cmdT1q = ['tcksample -stat_tck mean ' tckFile ' ' T1qfile ' ' csvT1q];
+% 
+%             bkgrnd = false;
+%             verbose = false;
+%             mrtrixVersion = 3;
+%             AFQ_mrtrix_cmd(cmdFA,  bkgrnd, verbose, mrtrixVersion)
+%             AFQ_mrtrix_cmd(cmdMTV, bkgrnd, verbose, mrtrixVersion)
+%             AFQ_mrtrix_cmd(cmdT1q, bkgrnd, verbose, mrtrixVersion)
+%             
+%         end;end;end
+        tctname = ['afq_L_vOF.tck'];
+            tckFile = [mrtrixdir filesep tctname];
+            csvFA  = fullfile(resultsFldr,['FA_' tctname '_' subname '.csv']);
+            csvMTV = fullfile(resultsFldr,['MTV_' tctname '_' subname '.csv']);
+            csvT1q = fullfile(resultsFldr,['T1q_' tctname '_' subname '.csv']);
+            
+            cmdFA  = ['tcksample -stat_tck mean ' tckFile ' ' faFile ' ' csvFA];
+            cmdMTV = ['tcksample -stat_tck mean ' tckFile ' ' MTVfile ' ' csvMTV];
+            cmdT1q = ['tcksample -stat_tck mean ' tckFile ' ' T1qfile ' ' csvT1q];
+
+            bkgrnd = false;
+            verbose = false;
+            mrtrixVersion = 3;
+            AFQ_mrtrix_cmd(cmdFA,  bkgrnd, verbose, mrtrixVersion)
+            AFQ_mrtrix_cmd(cmdMTV, bkgrnd, verbose, mrtrixVersion)
+            AFQ_mrtrix_cmd(cmdT1q, bkgrnd, verbose, mrtrixVersion)
+        
+        tctname = 'afq_L_pAF.tck';
+            tckFile = [mrtrixdir filesep tctname];
+            csvFA  = fullfile(resultsFldr,['FA_' tctname '_' subname '.csv']);
+            csvMTV = fullfile(resultsFldr,['MTV_' tctname '_' subname '.csv']);
+            csvT1q = fullfile(resultsFldr,['T1q_' tctname '_' subname '.csv']);
+            
+            cmdFA  = ['tcksample -stat_tck mean ' tckFile ' ' faFile ' ' csvFA];
+            cmdMTV = ['tcksample -stat_tck mean ' tckFile ' ' MTVfile ' ' csvMTV];
+            cmdT1q = ['tcksample -stat_tck mean ' tckFile ' ' T1qfile ' ' csvT1q];
+
+            bkgrnd = false;
+            verbose = false;
+            mrtrixVersion = 3;
+            AFQ_mrtrix_cmd(cmdFA,  bkgrnd, verbose, mrtrixVersion)
+            AFQ_mrtrix_cmd(cmdMTV, bkgrnd, verbose, mrtrixVersion)
+            AFQ_mrtrix_cmd(cmdT1q, bkgrnd, verbose, mrtrixVersion)        
+        
+    end
+    
+end
+
 
 
 

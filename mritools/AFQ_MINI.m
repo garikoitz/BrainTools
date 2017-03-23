@@ -47,8 +47,6 @@ fMRIDIR = fullfile(AnalysisDir, 'fMRI_SPM', 'block', 'data');
 % parpool('ips_base', str2num(available))
 %%%%% END CLUSTER PARPOOL  %%%%%%
 
-
-
 %% Encontrar VOF PARC y pasarlos a surfaces en fsaverage
 if(0)
     for ns = 1 : length(subs)
@@ -475,7 +473,6 @@ if(1)
     
 end
 
-
 %% Obtener las estadisticas
 % Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
 if(1)    
@@ -505,27 +502,27 @@ if(1)
         
            
         %% Por cada tracto que hemos leido antes, escribimos stats
-%         ROISphereRadius = [12]; % 8 y 12 son muy pequeos, igual hasta meter 15
-%         for tckt = tcktype;for conn = connections;for sphR=ROISphereRadius
-%             tctname = ['L_' tckt{:} '_' conn{:} '_R' num2str(sphR) '.tck'];
-%             
-%             tckFile = [mrtrixdir filesep tctname];
-%             csvFA  = fullfile(resultsFldr,['FA_' tctname '_' subname '.csv']);
-%             csvMTV = fullfile(resultsFldr,['MTV_' tctname '_' subname '.csv']);
-%             csvT1q = fullfile(resultsFldr,['T1q_' tctname '_' subname '.csv']);
-%             
-%             cmdFA  = ['tcksample -stat_tck mean ' tckFile ' ' faFile ' ' csvFA];
-%             cmdMTV = ['tcksample -stat_tck mean ' tckFile ' ' MTVfile ' ' csvMTV];
-%             cmdT1q = ['tcksample -stat_tck mean ' tckFile ' ' T1qfile ' ' csvT1q];
-% 
-%             bkgrnd = false;
-%             verbose = false;
-%             mrtrixVersion = 3;
-%             AFQ_mrtrix_cmd(cmdFA,  bkgrnd, verbose, mrtrixVersion)
-%             AFQ_mrtrix_cmd(cmdMTV, bkgrnd, verbose, mrtrixVersion)
-%             AFQ_mrtrix_cmd(cmdT1q, bkgrnd, verbose, mrtrixVersion)
-%             
-%         end;end;end
+        ROISphereRadius = [12]; % 8 y 12 son muy pequeos, igual hasta meter 15
+        for tckt = tcktype;for conn = connections;for sphR=ROISphereRadius
+            tctname = ['L_' tckt{:} '_' conn{:} '_R' num2str(sphR) '.tck'];
+            
+            tckFile = [mrtrixdir filesep tctname];
+            csvFA  = fullfile(resultsFldr,['FA_' tctname '_' subname '.csv']);
+            csvMTV = fullfile(resultsFldr,['MTV_' tctname '_' subname '.csv']);
+            csvT1q = fullfile(resultsFldr,['T1q_' tctname '_' subname '.csv']);
+            
+            cmdFA  = ['tcksample -stat_tck mean ' tckFile ' ' faFile ' ' csvFA];
+            cmdMTV = ['tcksample -stat_tck mean ' tckFile ' ' MTVfile ' ' csvMTV];
+            cmdT1q = ['tcksample -stat_tck mean ' tckFile ' ' T1qfile ' ' csvT1q];
+
+            bkgrnd = false;
+            verbose = false;
+            mrtrixVersion = 3;
+            AFQ_mrtrix_cmd(cmdFA,  bkgrnd, verbose, mrtrixVersion)
+            AFQ_mrtrix_cmd(cmdMTV, bkgrnd, verbose, mrtrixVersion)
+            AFQ_mrtrix_cmd(cmdT1q, bkgrnd, verbose, mrtrixVersion)
+            
+        end;end;end
         tctname = ['afq_L_vOF.tck'];
             tckFile = [mrtrixdir filesep tctname];
             csvFA  = fullfile(resultsFldr,['FA_' tctname '_' subname '.csv']);
@@ -563,7 +560,4 @@ if(1)
     end
     
 end
-
-
-
 

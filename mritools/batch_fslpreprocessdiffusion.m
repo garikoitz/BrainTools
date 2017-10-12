@@ -1,7 +1,7 @@
 function batch_fslpreprocessdiffusion(subName, AnalysisDir, ...
-                                  doPreProc, doBias,...
-                                  doDtiInit, doAfqCreate, doAfqRun)
-% GLU MINI project adapted from: BDE lab preprocessing for diffusion data
+                                      doPreProc, doBias,...
+                                      doDtiInit, doAfqCreate, doAfqRun)
+%% GLU MINI project adapted from: BDE lab preprocessing for diffusion data
 %
 %
 % Inputs
@@ -38,6 +38,7 @@ if ~exist(rawdir, 'dir'), mkdir(rawdir), end
 t1dir = fullfile(retdir, subName, 'anat');
 dmridir = fullfile(basedir,'dmri');
 aparcAsegDir = fullfile(FSdir, subName, 'mri');
+fsp = filesep;
 
 % Note glu: conversion from dicom in the ipython notebook file with qsubs
 d30 = dir(fullfile(rawdir,'*d35b1000*.nii'));
@@ -69,6 +70,7 @@ dwellTime = 0.095;
 
 % Directory to save everything
 outdir = fullfile(basedir,'dmri');
+mrtrixdiir = fullfile(outdir, 'dti90trilin','mrtrix');
 
 %% doPreProc: This is mostly done with command line calls to FSL
 if doPreProc
@@ -88,19 +90,19 @@ end
 % dmridir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S005/dmri'
 
 % Para esto hace falta mrtrix y ANTS instalados
-bvecs = fullfile(dmridir,'eddy','bvecs');
-bvals = fullfile(dmridir,'eddy','bvals');
-input_brain_mask = fullfile(dmridir,'eddy','nodif_brain_mask.nii.gz');
-input_dwi = fullfile(dmridir,'eddy','data.nii.gz');
-output_corrected_dwi = fullfile(dmridir,'eddy','biasdata.nii.gz');
-cmd = ['dwibiascorrect -ants ' ...
-       '-fslgrad ' bvecs ' ' bvals ' ' ...
-       '-mask ' input_brain_mask ' ' ...
-        input_dwi ' ' ...
-        output_corrected_dwi];   
-
-system(cmd);
-
+if doBias
+    bvecs = fullfile(dmridir,'eddy','bvecs');
+    bvals = fullfile(dmridir,'eddy','bvals');
+    input_brain_mask = fullfile(dmridir,'eddy','nodif_brain_mask.nii.gz');
+    input_dwi = fullfile(dmridir,'eddy','data.nii.gz');
+    output_corrected_dwi = fullfile(dmridir,'eddy','biasdata.nii.gz');
+    cmd = ['dwibiascorrect -ants ' ...
+           '-fslgrad ' bvecs ' ' bvals ' ' ...
+           '-mask ' input_brain_mask ' ' ...
+            input_dwi ' ' ...
+            output_corrected_dwi];   
+    system(cmd);
+end
 
 %% Global intensity normalisation across subjects
 % ESTO NO ESTA HECHO EN MINI, LO HICE EN UNO EN LOCAL PARA VER QUE FUNCIONA
@@ -108,8 +110,62 @@ system(cmd);
 % hay que llamar primero al batch con las opciones de arriba, hacer esto, y
 % luego seguir de doDtiInit para abajo. 
 
+% Copiar todos los archivos a una carpeta. Pero habra que cambiar el nombre
+    % para poder identificarlos luego. 
+% if(0) % Generar el comando pero lanzarlo por command line
+%     DWIdir = '/bcbl/home/public/Gari/MINI/ANALYSIS/DWI';
+%     DWI2dir = '/export/home/glerma/glerma/00local/PROYECTOS/MINI/ANALYSIS/DWI';
+%     input_dwi_folder = [DWI2dir fsp 'input_dwi_folder'];
+%     input_brain_mask_folder = [DWI2dir fsp 'input_brain_mask_folder'];
+%     output_normalised_dwi_folder = [DWI2dir fsp 'output_normalised_dwi_folder'];
+%     output_fa_template = [DWI2dir fsp 'output_fa_template'];
+%     output_template_wm_mask = [DWI2dir fsp 'output_template_wm_mask'];
+%     tempdir = '/scratch/glerma';
+%     cmd = ['dwiintensitynorm -force -nocleanup -nthreads 16 ' ...
+%            '-tempdir ' tempdir ' ' ...
+%             input_dwi_folder ' ' input_brain_mask_folder ' ' ...
+%             output_normalised_dwi_folder ' ' output_fa_template ' ' ...
+%             output_template_wm_mask]
+%     % Los dos ultimos son mriconvert de output fa template y template brain
+%     % mask. Pide por archivo, no folder. Lo he hecho a mano, y he tanto
+%     % .mif como .nii.gz
+%         
+% end
+
 %% Computing a group average response function
 % idem arriba
+% average_response <input_response_files (mulitple inputs accepted)> 
+%                  <output_group_average_response>
+% if (0)
+%     wmAll = [];
+%     csAll = [];
+%     gmAll = [];
+%     gm_output_group_average_response = [DWI2dir fsp 'output_group_average_response' fsp ...
+%                                         'gm_output_group_average_response.txt'];
+%     wm_output_group_average_response = [DWI2dir fsp 'output_group_average_response' fsp ...
+%                                         'wm_output_group_average_response.txt'];
+%     cs_output_group_average_response = [DWI2dir fsp 'output_group_average_response' fsp ...
+%                                         'cs_output_group_average_response.txt'];                               
+%     for ns = 1 : length(subs)
+%         subname = subs(ns).name
+%         % Folders
+%         DWIdir = '/bcbl/home/public/Gari/MINI/ANALYSIS/DWI';
+%         dmridir = fullfile(DWIdir, subname, 'dmri');
+%         mrtrixdir = fullfile(dmridir, 'noNorm_dti90trilin','mrtrix');
+%         wmResponse = fullfile(mrtrixdir, 'data_aligned_trilin_noMEC_wmResponse.txt');
+%         gmResponse = fullfile(mrtrixdir, 'data_aligned_trilin_noMEC_gmResponse.txt');
+%         csResponse = fullfile(mrtrixdir, 'data_aligned_trilin_noMEC_csfResponse.txt');
+%         wmAll = [wmResponse ' ' wmAll]; 
+%         csAll = [csResponse ' ' csAll]; 
+%         gmAll = [gmResponse ' ' gmAll]; 
+%     end
+%     wm_cmd = ['average_response ' wmAll ' ' wm_output_group_average_response];
+%     gm_cmd = ['average_response ' gmAll ' ' gm_output_group_average_response];
+%     cs_cmd = ['average_response ' csAll ' ' cs_output_group_average_response];
+%     system(wm_cmd)
+%     system(gm_cmd)
+%     system(cs_cmd)
+% end
 
 %% doDtiInit: to fit tensor model (ACTUALIZAR 'dtEddy' CON LA SALIDA DE LO ANTERIOR
 % Turn off motion and eddy current correction, that was taken care of by FSL
@@ -119,9 +175,9 @@ system(cmd);
 
 % Set up t1 path and the params that are common
 % t1 = fullfile(t1dir,'t1_std_acpc.nii.gz'); % Path to the acpc t1-weighted image
-t1 = fullfile(t1dir,'t1_std_acpc.nii.gz');
-copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
-
+% t1 = fullfile(t1dir,'t1_std_acpc.nii.gz');
+% copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
+t1 = fullfile(dmridir, 't1_std_acpc.nii.gz');
 
 aparcAseg = fullfile(aparcAsegDir, 'aparc+aseg.mgz');
 % copyfile(aparcAseg, dmridir);
@@ -132,7 +188,10 @@ params.rotateBvecsWithCanXform=1; % Siemens data requires this to be 1
 params.phaseEncodeDir=2; % AP phase encode, 1 is for R>>L (2 = A/P 'col')
 params.clobber=1; % Overwrite anything previously done
 params.fitMethod='ls'; % 'ls, or 'rt' for robust tensor fitting (longer)
+params.dt6BaseName = ''
+params.tensorFitting = false; % No lo uso para nada, que me haga el registro con la anatomica y ya
 
+% Ahora los archivos data.nii.g apuntan a los normalizados por mrtrix
 dtEddy = fullfile(dmridir,'eddy','data.nii.gz'); % Path to the data
 params.bvalsFile = fullfile(dmridir,'eddy','bvals'); % Path to bvals
 params.bvecsFile = fullfile(dmridir,'eddy','bvecs'); % Path to the bvecs
@@ -152,8 +211,6 @@ end
 %% doAfqCreate
 % Cell array with paths to the dt6 directories
 dt6dirs = horzcat({fileparts(dt6FileName{1})});
-%dt6dirs = horzcat({'/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/S002/dmri/dti90trilin'});
-%dt6dirs = horzcat({'/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS/DWI/S011/dmri/dti90trilin'});
 
 % afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'clip2rois', 0);
 % To run AFQ in test mode so it will go quickly
@@ -165,14 +222,14 @@ if doAfqCreate
                      'sub_group', [0], ...
                      'sub_names', [subName],...
                      'computeCSD',1);
-    save(fullfile(basedir, 'afqOut'), 'afq')
+    save(fullfile(basedir, 'afqOutAfqCreate'), 'afq')
 end
 
-%% doAfqCreate
+%% doAfqRun
 if doAfqRun
-    load(fullfile(basedir, 'afqOut.mat'))
+    load(fullfile(basedir, 'afqOutAfqCreate.mat'))
     afq = AFQ_run([],[],afq);
-    save(fullfile(basedir, 'afqOut'), 'afq')
+    save(fullfile(basedir, 'afqOutAfqRun'), 'afq')
 end
 
 

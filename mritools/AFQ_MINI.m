@@ -47,16 +47,14 @@ fMRIDIR = fullfile(AnalysisDir, 'fMRI_SPM', 'block', 'data');
 % parpool('ips_base', str2num(available))
 %%%%% END CLUSTER PARPOOL  %%%%%%
 
-
-
 %% Encontrar VOF PARC y pasarlos a surfaces en fsaverage
 if(0)
-    for ns = 1 : length(subs)
+  for ns = 1 : length(subs)
+    %% Find the VOF per every subject
     subname = subs(ns).name
 
     setenv('FREESURFER_HOME', fshome); 
 
-    %% Find the VOF per every subject
 
     path2anat = fullfile(retDIR, subname, 'anat');
     path2fMRIanat = fullfile(fMRIDIR, subname, 'anat');
@@ -86,7 +84,9 @@ if(0)
     if ~exist(outdir, 'dir'), mkdir(outdir), end
     thresh= [];
     v_crit= [];
-    dt= dtiLoadDt6(fullfile(dmridir, 'dti90trilin', 'dt6.mat'));
+    % GLU dt= dtiLoadDt6(fullfile(dmridir, 'dti90trilin', 'dt6.mat'));
+    load(fullfile(dmridir, 'dti90trilin', 'dt6.mat'));
+    dt.dataFile = fullfile(dmridir, 'dti90trilin')
     savefiles= true;
     arcThresh= [];
     parcThresh= [];
@@ -109,25 +109,25 @@ if(0)
     % % and now load them, just to be shure they work fine.
     % load( fullfile(outdir, 'VOF_all.mat'));
     % 
-    % %% RENDER
+    %% RENDER
     % % Read the ROIs in the cortex
-    roi_L_fusiform = dtiReadRoi(fullfile(dmridir,'ROIs', ...
-                                '1007_ctx-lh-fusiform.mat'));
-    roi_L_inferiortemporal = dtiReadRoi(fullfile(dmridir,'ROIs', ...
-                                             '1009_ctx-lh-inferiortemporal.mat'));
-    roi_L_lateraloccipital = dtiReadRoi(fullfile(dmridir,'ROIs', ...
-                                             '1011_ctx-lh-lateraloccipital.mat'));                                     
-    
-    
-    % Rnder them the fibers and the cortex rois
-    AFQ_RenderFibers(L_VOF , 'color',  [158 47 88]/256, ...
-                    'tubes',[0]); % Render the fibers
-    AFQ_RenderFibers(L_pArc , 'color',  [237 139 140]/256, 'tubes',[0], ...
-                     'newfig',false); % Render the fibers
-    % Render the roi in orange
-    AFQ_RenderRoi(roi_L_fusiform, [241 217 201]/256, 'mesh'); 
-    AFQ_RenderRoi(roi_L_inferiortemporal, [241 217 181]/256, 'mesh'); 
-    AFQ_RenderRoi(roi_L_lateraloccipital, [241 217 161]/256, 'mesh'); 
+%     roi_L_fusiform = dtiReadRoi(fullfile(dmridir,'ROIs', ...
+%                                 '1007_ctx-lh-fusiform.mat'));
+%     roi_L_inferiortemporal = dtiReadRoi(fullfile(dmridir,'ROIs', ...
+%                                              '1009_ctx-lh-inferiortemporal.mat'));
+%     roi_L_lateraloccipital = dtiReadRoi(fullfile(dmridir,'ROIs', ...
+%                                              '1011_ctx-lh-lateraloccipital.mat'));                                     
+%     
+%     
+%     % Rnder them the fibers and the cortex rois
+%     AFQ_RenderFibers(L_VOF , 'color',  [158 47 88]/256, ...
+%                     'tubes',[0]); % Render the fibers
+%     AFQ_RenderFibers(L_pArc , 'color',  [237 139 140]/256, 'tubes',[0], ...
+%                      'newfig',false); % Render the fibers
+%     % Render the roi in orange
+%     AFQ_RenderRoi(roi_L_fusiform, [241 217 201]/256, 'mesh'); 
+%     AFQ_RenderRoi(roi_L_inferiortemporal, [241 217 181]/256, 'mesh'); 
+%     AFQ_RenderRoi(roi_L_lateraloccipital, [241 217 161]/256, 'mesh'); 
 % 
 %     % con este comando binarizo aparc+aseg y ademas solo me quedo con el GM
     FSLDIR = '/opt/fsl/fsl-5.0.9/fsl';
@@ -142,7 +142,7 @@ if(0)
 % 
 % 
 % 
-    % Obtener el file con el intersect entre fiber y cortex
+    %% Obtener el file con el intersect entre fiber y cortex
     % por ahora solo hago el posterior arcuate y el VOF
     fiberRois = {L_VOF, L_pArc, L_pArc_vot};
     for fr =1:length(fiberRois)
@@ -212,7 +212,7 @@ if(0)
         % en fs ahora
         segRead = MRIread([dmridir fsp 'segmentation.nii.gz']);
         segRead.vol = permute(fdNii.data, [2 1 3]);  % mierdas de x,y en Matlab
-        MRIwrite(segRead, [dmridir fsp fg.name '_tracts.nii.gz']);
+        MRIwrite(segRead, [dmridir fsp 'NORM_' fg.name '_tracts.nii.gz']);
 
 
         % Hay que pensar si hago el paso a la superficie con todos los
@@ -223,9 +223,9 @@ if(0)
         % los rois. Lo de los tractos tiene que ser bidireccional. 
 
         % Y ahora los convertimos a superficie usando fs
-        movname    = fullfile(dmridir, [fg.name '_tracts.nii.gz']);
-        oname      = fullfile(dmridir, [fg.name '_tracts.mgh']);
-        oname305   = fullfile(dmridir, [fg.name '_tracts305.mgh']);
+        movname    = fullfile(dmridir, ['NORM_' fg.name '_tracts.nii.gz']);
+        oname      = fullfile(dmridir, ['NORM_' fg.name '_tracts.mgh']);
+        oname305   = fullfile(dmridir, ['NORM_' fg.name '_tracts305.mgh']);
 
         % fshomecajal02 = '/usr/local/freesurfer';
         % fsbincajal02 = '/usr/local/freesurfer/bin';
@@ -316,9 +316,9 @@ if(0)
 % %                      fullfile(dmridir, 'dti90trilin','mrtrix',[fname '.label']));
 % 
 % 
-     end
+    end
 
-end
+  end
 end
 
 %% Convertir VOF y PARC a tcks para usar en mrtrix (se hizo a posteriori)
@@ -412,25 +412,28 @@ end
       
 %% Crear los seis pares de tractos creando esferas en esos puntos
 % No he conseguido hacer funcionar mrtrix dentro de parfor...
-if(1)    
+if(0)    
 
     for ns = 1 : length(subs)
         ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
                  'VOT_perc_averages', 'VOT_sem_averages', ...
                  'IFG_perc_averages', 'IFG_sem_averages'};
         tcktype       = {'sem', 'perc'};
-        connections   = {'VOT2IFG', 'VOT2PPC', 'PPC2IFG'};
+        connections1   = {'VOT2IFG', 'VOT2PPC', 'PPC2IFG'}
+        connections2   = {'VOT2VOT', 'PPC2PPC'};
         dilateLabelBy = '1';
         setenv('FREESURFER_HOME', fshome); 
         setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
         oldPath = getenv('PATH');
-        setenv('PATH', ...
-                ['/bcbl/home/home_g-m/glerma/GIT/mrtrix3/release/bin:' ...
-                '/bcbl/home/home_g-m/glerma/GIT/mrtrix3/scripts:' ...
-                oldPath]);
+%         setenv('PATH', ...
+%                 ['/bcbl/home/home_g-m/glerma/GIT/mrtrix3/release/bin:' ...
+%                 '/bcbl/home/home_g-m/glerma/GIT/mrtrix3/scripts:' ...
+%                 oldPath]);
 
-        ROISphereRadius = [8,10,12];
-        WholeTractogramName = 'data_aligned_trilin_noMEC_wmCsd_lmax4_data_aligned_trilin_noMEC_wmMask_data_aligned_trilin_noMEC_wmMask_iFOD2-500000.tck';        
+%         ROISphereRadius = [8,10,12];
+        ROISphereRadius = [12];
+        % WholeTractogramName = 'data_aligned_trilin_noMEC_wmCsd_lmax4_data_aligned_trilin_noMEC_wmMask_data_aligned_trilin_noMEC_wmMask_iFOD2-500000.tck';        
+        WholeTractogramName = 'data_alignedNorm_trilin_noMEC.tck';
         subname = subs(ns).name
         dmridir = fullfile(DWIdir, subname, 'dmri');
         mrtrixdir = fullfile(dmridir, 'dti90trilin','mrtrix');
@@ -447,7 +450,8 @@ if(1)
             coords.([roi dilateLabelBy]) = scanRAS;
         end   
         %% Creamos los tractos con las esferas
-        for tckt = tcktype;for conn = connections;for sphR=ROISphereRadius
+        % Primero hicimos el triangulo sem y perc por separado
+        for tckt = tcktype;for conn = connections1;for sphR=ROISphereRadius
             tctname = ['L_' tckt{:} '_' conn{:} '_R' num2str(sphR) '.tck'];
             con1 = conn{:}(1:3);
             coord1 = round(coords.([con1 '_' tckt{:} '_averages' dilateLabelBy])');
@@ -471,14 +475,38 @@ if(1)
             AFQ_mrtrix_cmd(cmd_str, bkgrnd, verbose,mrtrixVersion)
             
         end;end;end
+        % Luego VOT2VOT y PPC2PPC
+        for conn = connections2;for sphR=ROISphereRadius
+            tctname = ['L_percsem_' conn{:} '_R' num2str(sphR) '.tck'];
+            con1 = conn{:}(1:3);
+            coord1 = round(coords.([con1 '_sem_averages' dilateLabelBy])');
+            coord1(4) = sphR;
+            roi1 = strjoin(arrayfun(@(x) num2str(x),coord1,'UniformOutput',false),',');
+            
+            con2 = conn{:}(5:7);
+            coord2 = round(coords.([con2 '_perc_averages' dilateLabelBy])');
+            coord2(4) = sphR;
+            roi2 = strjoin(arrayfun(@(x) num2str(x),coord2,'UniformOutput',false),',');
+            
+            cmd_str = ['tckedit ' ...
+                       '-include ' roi1  ' ' ...
+                       '-include ' roi2  ' ' ...
+                       '-ends_only ' ... 
+                         [mrtrixdir filesep WholeTractogramName] ' ' ...
+                         [mrtrixdir filesep tctname]];
+            bkgrnd = false;
+            verbose = false;
+            mrtrixVersion = 3;
+            AFQ_mrtrix_cmd(cmd_str, bkgrnd, verbose,mrtrixVersion)
+        end;end
+    
     end
     
 end
 
-
-%% Obtener las estadisticas
+%% Obtener las estadisticas sin SIFT
 % Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
-if(1)    
+if(0)    
     resultsFldr = fullfile(DWIdir, 'ResultsCSV');
     for ns = 1 : length(subs)
         ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
@@ -564,6 +592,406 @@ if(1)
     
 end
 
+%% doBias: En vez de iPython, lanzando por aqui los comandos de batch_fslpreproc
+% Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
+if(1)
+    for ns = 1 : length(subs)
+        subname = subs(ns).name
+
+        % Folders
+        dmridir = fullfile(DWIdir, subname, 'dmri');
+        mrtrixdir = fullfile(dmridir, 'dti90trilin','mrtrix');
+        faFile = fullfile(mrtrixdir, 'data_aligned_trilin_noMEC_fa.mif');
+
+        % Options
+        doPreProc = 0
+        doBias = 1
+        doDtiInit = 0
+        doAfqCreate = 0
+        doAfqRun = 0
+        batch_fslpreprocessdiffusion(subname, AnalysisDir, ...
+                                     doPreProc, doBias,...
+                                     doDtiInit, doAfqCreate, doAfqRun)
+    end
+end
+
+%% Tengo que crear los simbolic links a los DWI
+% Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
+if(1)
+    for ns = 1 : length(subs)
+        subname = subs(ns).name
+
+        % Folders
+        dmridir = fullfile(DWIdir, subname, 'dmri');
+        mrtrixdir = fullfile(dmridir, 'dti90trilin','mrtrix');
+        faFile = fullfile(mrtrixdir, 'data_aligned_trilin_noMEC_fa.mif');
+
+        
+        
+        % No   funciona pq antes tengo que meter bvacs y    bvals
+%         
+%         cmd0 = ['mrconvert -fslgrad ' dmridir fsp 'eddy' fsp 'bvecs ' ...
+%                  dmridir fsp 'eddy' fsp 'bvals ' ...
+%                  dmridir fsp 'eddy' fsp 'biasdata.nii.gz ' ...
+%                  dmridir fsp 'eddy' fsp 'biasdata.mif'];
+%             bkgrnd = false;
+%             verbose = false;
+%             mrtrixVersion = 3;
+%         AFQ_mrtrix_cmd(cmd0, bkgrnd, verbose,mrtrixVersion)
+        DWI2dir = '/export/home/glerma/glerma/00local/PROYECTOS/MINI/ANALYSIS/DWI';
+        cmd1 = ['ln -s ' dmridir fsp 'eddy' fsp 'biasdata.mif ' ...
+                         DWI2dir fsp 'input_dwi_folder' fsp subname '.mif'];
+        cmd2 = ['ln -s ' dmridir fsp 'eddy' fsp 'nodif_brain_mask.nii.gz ' ...
+                         DWI2dir fsp 'input_brain_mask_folder' fsp subname '.nii.gz'];
+        system(cmd1)
+        system(cmd2)
+
+    end
+end
+
+%% Los archivos normalizados son .mif, convertirlos a .nii.gz para que lea mrDiffussion y seguir con el pipeline de antes
+% Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
+if(1)
+    for ns = 1 : length(subs)
+        %setenv('PATH','/bcbl/home/home_g-m/glerma/GIT/mrtrix3/release/bin:/bcbl/home/home_g-m/glerma/GIT/mrtrix3/scripts');
+        subname = subs(ns).name
+        DWI2dir = '/export/home/glerma/glerma/00local/PROYECTOS/MINI/ANALYSIS/DWI';
+        output_normalised_dwi_folder = [DWI2dir fsp 'output_normalised_dwi_folder'];
+        cmd_str = ['mrconvert ' output_normalised_dwi_folder fsp subname '.mif ' ...
+               output_normalised_dwi_folder fsp subname '.nii.gz'];
+        bkgrnd = false;
+        verbose = false;
+        mrtrixVersion = 3;
+        AFQ_mrtrix_cmd(cmd_str, bkgrnd, verbose,mrtrixVersion)
+    end
+end
+
+%% No hay sitio en public, crear carpeta en home folder y link desde public
+% Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
+if(0)
+      oldDWI = '/bcbl/home/public/Gari/MINI/ANALYSIS/DWI';
+      newDWI = '/bcbl/home/home_g-m/glerma/00local/PROYECTOS/MINI/ANALYSIS/DWI';
+      
+      for ns = 4 : length(subs)
+        subname = subs(ns).name
+
+        %Rename old dti90trilin directories
+        olddmri = fullfile(oldDWI, subname, 'dmri','dti90trilin');
+        noNorm_olddmri = fullfile(oldDWI, subname, 'dmri','noNorm_dti90trilin');
+%         system(['mv ' olddmri ' '  noNorm_olddmri])
+%         
+%         % Rename old data.nii.gz too noNorm
+%           oldData = fullfile(oldDWI, subname, 'dmri','eddy','data.nii.gz');
+%           noNormOldData = fullfile(oldDWI, subname, 'dmri','eddy','noNorm_data.nii.gz');
+%           system(['mv ' oldData ' '  noNormOldData])
+%           % New Folders
+%         subjectdir = fullfile(newDWI, subname);
+%         dmridir = fullfile(subjectdir, 'dmri');
+%         trilindir = fullfile(dmridir, 'dti90trilin');
+%         
+%         % Create new directories
+%         mkdir(subjectdir)
+%         mkdir(dmridir)
+%         mkdir(trilindir)
+%         
+%         % Create symbolic links in public
+%         cmd1 = ['ln -s ' trilindir ' ' olddmri];
+%         system(cmd1)
+% 
+%         % Create symbolic links in public
+%         output_normalised_dwi_folder = [newDWI fsp 'output_normalised_dwi_folder'];
+%         normData = fullfile(output_normalised_dwi_folder,[subname '.nii.gz']); % Path to the data
+%         cmd1 = ['ln -s ' normData ' ' oldData];
+%         system(cmd1)
+        
+%         old5tt = 'data_aligned_trilin_noMEC_5tt.mif';
+%         nuevo5tt = 'data_alignedNorm_trilin_noMEC_5tt.mif';
+%         zahar  = fullfile(noNorm_olddmri,'mrtrix' , old5tt  );
+%         berria = fullfile(olddmri, 'mrtrix', nuevo5tt);
+%         mkdir(fullfile(olddmri, 'mrtrix'))
+%         cmd  = ['ln -s ' zahar ' ' berria]
+%         system(cmd)
+        
+        % Cambiar el nombre a los afqOut.mat que ya existen, para el S001 y
+        % el S002 no los he podido salvar, pero los otros guardar por si
+        % acaso
+%         zahar = fullfile(oldDWI,subname,'afqOut.mat');
+%         berria = fullfile(oldDWI,subname,'afqOut_noNorm.mat');
+%         cmd  = ['mv ' zahar ' ' berria]
+%         system(cmd)
+    end
+end
+
+%% doDtiInit: En vez de iPython, lanzando por aqui los comandos de batch_fslpreproc
+% Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
+if(0)
+    clear all; close all; 
+    fsp = filesep;
+    subs = dir('S*');
+    for ns =2 1 : length(subs)
+        subname = subs(ns).name
+        subName = subname;
+        % Folders
+        AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS';
+        
+        % Options
+        doPreProc = 0;
+        doBias = 0;
+        doDtiInit = 1;
+        doAfqCreate = 1;
+        doAfqRun = 1;
+        tic
+        batch_fslpreprocessdiffusion(subname, AnalysisDir, ...
+                                     doPreProc, doBias,...
+                                     doDtiInit, doAfqCreate, doAfqRun);
+        toc                         
+    end
+end
+% batch_fslpreprocessdiffusion('S002', '/bcbl/home/public/Gari/MINI/ANALYSIS', 0, 0,1, 1, 1);
+% batch_fslpreprocessdiffusion('S002',  '/bcbl/home/public/Gari/MINI/ANALYSIS', 0, 0,0, 0, 1);
+     
+%% dwi2fod, tckgen, SIFT2 y Crear los seis pares de tractos creando esferas en esos puntos
+% No he conseguido hacer funcionar mrtrix dentro de parfor...
+if(0)    
+
+pDWI = '/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/';
+hDWI = '/bcbl/home/home_g-m/glerma/00local/PROYECTOS/MINI/ANALYSIS/DWI';
+fsp = filesep;
+    % for ns = 1 : length(subs)
+    for ns = 1  : 12
+    % for ns = 13  : 24
+    % for ns = 25 : 36 
+    % for ns = 37 : 48
+    % for ns = 49  : 60
+    % for ns = 61 : 72 
+    % for ns = 73 : 84
+    % for ns = 85 : 97
+
+        tic
+        numFiberNum = '5000000';
+        numFiberName = '5M';
+        
+        subname = subs(ns).name
+        hacerCSD = 0
+        hacerTCK = 1
+        hacerSIFT2 = 1
+        
+        if hacerCSD 
+            tic
+            system(['dwi2fod msmt_csd -force -nthreads 16 ' ...
+            '-grad ' pDWI fsp  subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC.b ' ...
+            '-mask  /bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_brainmask.mif ' ...
+            pDWI fsp subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_dwi.mif ' ...
+            hDWI fsp 'output_group_average_response/wm_output_group_average_response.txt ' ...
+            pDWI fsp subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_wmCsd_lmax4.mif ' ...
+            hDWI fsp 'output_group_average_response/gm_output_group_average_response.txt ' ...
+            pDWI fsp subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_gmCsd_lmax4.mif ' ...
+            hDWI fsp 'output_group_average_response/cs_output_group_average_response.txt ' ...'
+            pDWI fsp subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_csfCsd_lmax4.mif'])
+            toc
+       end
+               
+        if hacerTCK
+%             tic
+            system(['tckgen /bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_wmCsd_lmax4.mif '  ...
+                       '-algo iFOD2 ' ...
+                       '-seed_image /bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_wmCsd_lmax4.mif ' ...
+                       '-act /bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_5tt.mif ' ...
+                       '-num ' numFiberNum ' ' ...
+                       '/bcbl/home/public/Gari/MINI/ANALYSIS/DWI/' subname '/dmri/dti90trilin/mrtrix/' numFiberName 'data_alignedNorm_trilin_noMEC.tck']);
+%             toc
+        end
+        
+        if hacerSIFT2
+%           tic
+          system(['tcksift2 -force -nthreads 16 ' ...
+                    '-act ' pDWI fsp subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_5tt.mif ' ...
+                    pDWI fsp subname '/dmri/dti90trilin/mrtrix/' numFiberName 'data_alignedNorm_trilin_noMEC.tck ' ...                    
+                    pDWI fsp subname '/dmri/dti90trilin/mrtrix/data_alignedNorm_trilin_noMEC_wmCsd_lmax4.mif ' ...
+                    pDWI fsp subname '/dmri/dti90trilin/mrtrix/' numFiberName 'data_alignedNorm_trilin_noMEC.sift2.weight']);
+%           toc
+        end
+        
+        ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
+                 'VOT_perc_averages', 'VOT_sem_averages', ...
+                 'IFG_perc_averages', 'IFG_sem_averages'};
+        tcktype       = {'sem', 'perc'};
+        connections1   = {'VOT2IFG', 'VOT2PPC', 'PPC2IFG'}
+        connections2   = {'VOT2VOT', 'PPC2PPC'};
+        dilateLabelBy = '1';
+        setenv('FREESURFER_HOME', fshome); 
+        setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
+        oldPath = getenv('PATH');
+
+%         ROISphereRadius = [8,10,12];
+        ROISphereRadius = [12];
+        % WholeTractogramName = 'data_aligned_trilin_noMEC_wmCsd_lmax4_data_aligned_trilin_noMEC_wmMask_data_aligned_trilin_noMEC_wmMask_iFOD2-500000.tck';        
+        WholeTractogramName =  [numFiberName 'data_alignedNorm_trilin_noMEC.tck'];
+        dmridir = fullfile(DWIdir, subname, 'dmri');
+        mrtrixdir = fullfile(dmridir, 'dti90trilin','mrtrix');
+        % T1std = MRIread([dmridir fsp  't1_std_acpc.nii.gz']);
+        T1 = MRIread([fs_SUBJECTS_DIR fsp  subname fsp 'mri' fsp 'T1.mgz']);
+        %% Convertimos los one vertex voxels al espacio individual
+        coords = struct();
+        for ROI = ROIs
+            roi = ROI{:};
+            label = read_label(subname, ['lh.' roi dilateLabelBy]);
+            surfRAS =  label(1, 2:4);
+            % Convertir desde surfaceRAS a scannerRas
+            scanRAS  =  T1.vox2ras  * inv(T1.tkrvox2ras) *  [surfRAS';1];
+            coords.([roi dilateLabelBy]) = scanRAS;
+        end   
+        %% Creamos los tractos con las esferas
+        % Primero hicimos el triangulo sem y perc por separado
+        for tckt = tcktype;for conn = connections1;for sphR=ROISphereRadius
+            tctname = [numFiberName 'L_' tckt{:} '_' conn{:} '_R' num2str(sphR) '.tck'];
+            con1 = conn{:}(1:3);
+            coord1 = round(coords.([con1 '_' tckt{:} '_averages' dilateLabelBy])');
+            coord1(4) = sphR;
+            roi1 = strjoin(arrayfun(@(x) num2str(x),coord1,'UniformOutput',false),',');
+            
+            con2 = conn{:}(5:7);
+            coord2 = round(coords.([con2 '_' tckt{:} '_averages' dilateLabelBy])');
+            coord2(4) = sphR;
+            roi2 = strjoin(arrayfun(@(x) num2str(x),coord2,'UniformOutput',false),',');
+            
+            cmd_str = ['tckedit -force -nthreads 16 ' ...
+                       '-tck_weights_in ' pDWI fsp subname '/dmri/dti90trilin/mrtrix/' numFiberName 'data_alignedNorm_trilin_noMEC.sift2.weight ' ...
+                       '-tck_weights_out ' [mrtrixdir filesep tctname '.sift2.weight'] ' ' ...
+                       '-include ' roi1  ' ' ...
+                       '-include ' roi2  ' ' ...
+                       '-ends_only ' ... 
+                         [mrtrixdir filesep WholeTractogramName] ' ' ...
+                         [mrtrixdir filesep tctname]];
+            bkgrnd = false;
+            verbose = false;
+            mrtrixVersion = 3;
+            AFQ_mrtrix_cmd(cmd_str, bkgrnd, verbose,mrtrixVersion)
+            
+        end;end;end
+        % Luego VOT2VOT y PPC2PPC
+        for conn = connections2;for sphR=ROISphereRadius
+            tctname = [numFiberName 'L_percsem_' conn{:} '_R' num2str(sphR) '.tck'];
+            con1 = conn{:}(1:3);
+            coord1 = round(coords.([con1 '_sem_averages' dilateLabelBy])');
+            coord1(4) = sphR;
+            roi1 = strjoin(arrayfun(@(x) num2str(x),coord1,'UniformOutput',false),',');
+            
+            con2 = conn{:}(5:7);
+            coord2 = round(coords.([con2 '_perc_averages' dilateLabelBy])');
+            coord2(4) = sphR;
+            roi2 = strjoin(arrayfun(@(x) num2str(x),coord2,'UniformOutput',false),',');
+            
+            cmd_str = ['tckedit -force -nthreads 16 ' ...
+                       '-tck_weights_in ' pDWI fsp subname '/dmri/dti90trilin/mrtrix/' numFiberName 'data_alignedNorm_trilin_noMEC.sift2.weight ' ...
+                       '-tck_weights_out ' [mrtrixdir filesep tctname '.sift2.weight'] ' ' ...
+                       '-include ' roi1  ' ' ...
+                       '-include ' roi2  ' ' ...
+                       '-ends_only ' ... 
+                         [mrtrixdir filesep WholeTractogramName] ' ' ...
+                         [mrtrixdir filesep tctname]];
+            bkgrnd = false;
+            verbose = false;
+            mrtrixVersion = 3;
+            AFQ_mrtrix_cmd(cmd_str, bkgrnd, verbose,mrtrixVersion)
+        end;end
+        toc
+    end
+    
+    
+end
+
+
+%  find -maxdepth 1 -type d -readable -exec sh -c 'echo "$1"; find "$1"/dmri/dti90trilin/mrtrix/2M*.weigth  | wc -l' sh {} ';'
+
+%% Obtener las estadisticas para tractos con SIFT2 
+% Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
+if(0)    
+    resultsFldr = fullfile(DWIdir, 'ResultsCSVSIFT2');
+    % mkdir(fullfile(DWIdir, 'ResultsCSVSIFT2'))
+    for ns = 1 : length(subs)
+        TCTs = { 'L_perc_VOT2PPC_R12.tck',    'L_sem_VOT2PPC_R12.tck', ...
+                 'L_perc_VOT2IFG_R12.tck',    'L_sem_VOT2IFG_R12.tck', ...
+                 'L_perc_PPC2IFG_R12.tck',    'L_sem_PPC2IFG_R12.tck', ...
+                 'L_percsem_VOT2VOT_R12.tck', 'L_percsem_PPC2PPC_R12.tck'};
+        numFibers = {'','2M'}
+        
+        setenv('FREESURFER_HOME', fshome); 
+        setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
+        
+        subname = subs(ns).name
+        dmridir = fullfile(DWIdir, subname, 'dmri');
+        mrtrixdir = fullfile(dmridir, 'dti90trilin','mrtrix');
+        % faFile = fullfile(mrtrixdir, 'data_aligned_trilin_noMEC_fa.mif');
+        MTVfile = fullfile(qmridir,subname,'OutPutFiles_1','BrainMaps','TV_map.nii.gz');
+        T1qfile = fullfile(qmridir,subname,'OutPutFiles_1','BrainMaps','T1_map_Wlin.nii.gz');
+
+        
+           
+        %% Por cada tracto que hemos leido antes, escribimos stats
+        ROISphereRadius = [12]; % 8 y 12 son muy pequeos, igual hasta meter 15
+        for nF = numFibers;for tct = TCTs;for sphR=ROISphereRadius
+            tctname = [nF{:} tct{:}]
+            
+            tckFile = [mrtrixdir filesep tctname];
+            % csvFA  = fullfile(resultsFldr,['FA_' tctname '_' subname '.csv']);
+            csvMTV = fullfile(resultsFldr,['MTV_' tctname '_' subname '.csv']);
+            csvT1q = fullfile(resultsFldr,['T1q_' tctname '_' subname '.csv']);
+            
+            % cmdFA  = ['tcksample -stat_tck mean ' tckFile ' ' faFile ' ' csvFA];
+            cmdMTV = ['tcksample -stat_tck mean ' tckFile ' ' MTVfile ' ' csvMTV];
+            cmdT1q = ['tcksample -stat_tck mean ' tckFile ' ' T1qfile ' ' csvT1q];
+
+            bkgrnd = false;
+            verbose = false;
+            mrtrixVersion = 3;
+            % AFQ_mrtrix_cmd(cmdFA,  bkgrnd, verbose, mrtrixVersion)
+            AFQ_mrtrix_cmd(cmdMTV, bkgrnd, verbose, mrtrixVersion)
+            AFQ_mrtrix_cmd(cmdT1q, bkgrnd, verbose, mrtrixVersion)
+            
+        end;end;end
+%         tctname = ['afq_L_vOF.tck'];
+%             tckFile = [mrtrixdir filesep tctname];
+%             csvFA  = fullfile(resultsFldr,['FA_' tctname '_' subname '.csv']);
+%             csvMTV = fullfile(resultsFldr,['MTV_' tctname '_' subname '.csv']);
+%             csvT1q = fullfile(resultsFldr,['T1q_' tctname '_' subname '.csv']);
+%             
+%             cmdFA  = ['tcksample -stat_tck mean ' tckFile ' ' faFile ' ' csvFA];
+%             cmdMTV = ['tcksample -stat_tck mean ' tckFile ' ' MTVfile ' ' csvMTV];
+%             cmdT1q = ['tcksample -stat_tck mean ' tckFile ' ' T1qfile ' ' csvT1q];
+% 
+%             bkgrnd = false;
+%             verbose = false;
+%             mrtrixVersion = 3;
+%             AFQ_mrtrix_cmd(cmdFA,  bkgrnd, verbose, mrtrixVersion)
+%             AFQ_mrtrix_cmd(cmdMTV, bkgrnd, verbose, mrtrixVersion)
+%             AFQ_mrtrix_cmd(cmdT1q, bkgrnd, verbose, mrtrixVersion)
+%         
+%         tctname = 'afq_L_pAF.tck';
+%             tckFile = [mrtrixdir filesep tctname];
+%             csvFA  = fullfile(resultsFldr,['FA_' tctname '_' subname '.csv']);
+%             csvMTV = fullfile(resultsFldr,['MTV_' tctname '_' subname '.csv']);
+%             csvT1q = fullfile(resultsFldr,['T1q_' tctname '_' subname '.csv']);
+%             
+%             cmdFA  = ['tcksample -stat_tck mean ' tckFile ' ' faFile ' ' csvFA];
+%             cmdMTV = ['tcksample -stat_tck mean ' tckFile ' ' MTVfile ' ' csvMTV];
+%             cmdT1q = ['tcksample -stat_tck mean ' tckFile ' ' T1qfile ' ' csvT1q];
+% 
+%             bkgrnd = false;
+%             verbose = false;
+%             mrtrixVersion = 3;
+%             AFQ_mrtrix_cmd(cmdFA,  bkgrnd, verbose, mrtrixVersion)
+%             AFQ_mrtrix_cmd(cmdMTV, bkgrnd, verbose, mrtrixVersion)
+%             AFQ_mrtrix_cmd(cmdT1q, bkgrnd, verbose, mrtrixVersion)        
+        
+    end
+    
+end
 
 
 
+% Encontrar y tar: 
+% find ./*/dmri/dti90trilin/mrtrix -type f -name *R12.tck -print0 | tar -cvzf  AllSIFT2_Tracts.tar.gz --null -T -
+
+% Econtrar para validar
+% find -maxdepth 1 -type d -readable -exec sh -c 'echo "$1"; find "$1"/OutPutFiles_1/BrainMaps/*WM_305.mgh  | wc -l' sh {} ';

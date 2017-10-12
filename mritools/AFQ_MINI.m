@@ -12,13 +12,13 @@ fsp = filesep;
 
 % Folder Names
 % LOCAL
-% MINIDIR = '/Users/gari/Documents/BCBL_PROJECTS/MINI';
-% fsbin = '/Applications/freesurfer/bin';
-% fshome = '/Applications/freesurfer'; 
+MINIDIR = '/Users/gari/Documents/BCBL_PROJECTS/MINI';
+fsbin = '/Applications/freesurfer6/bin';
+fshome = '/Applications/freesurfer6'; 
 % SERVER
-MINIDIR = '/bcbl/home/public/Gari/MINI';
-fsbin = '/opt/freesurfer-5.3.0/freesurfer/bin';
-fshome = '/opt/freesurfer-5.3.0/freesurfer'; 
+% MINIDIR = '/bcbl/home/public/Gari/MINI';
+% fsbin = '/opt/freesurfer-5.3.0/freesurfer/bin';
+% fshome = '/opt/freesurfer-5.3.0/freesurfer'; 
 
 AnalysisDir = [MINIDIR fsp 'ANALYSIS'];
 fs_SUBJECTS_DIR = fullfile(AnalysisDir, 'freesurferacpc');
@@ -418,13 +418,22 @@ if(0)
         ROIs = {'PPC_perc_averages', 'PPC_sem_averages', ...
                  'VOT_perc_averages', 'VOT_sem_averages', ...
                  'IFG_perc_averages', 'IFG_sem_averages'};
-        tcktype       = {'sem', 'perc'};
-        connections1   = {'VOT2IFG', 'VOT2PPC', 'PPC2IFG'}
-        connections2   = {'VOT2VOT', 'PPC2PPC'};
+
+%         tcktype       = {'sem', 'perc'};
+%         connections1   = {'VOT2IFG', 'VOT2PPC', 'PPC2IFG'}
+%         connections2   = {'VOT2VOT', 'PPC2PPC'};
+%         dilateLabelBy = '1';
+%         setenv('FREESURFER_HOME', fshome); 
+%         setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
+%         oldPath = getenv('PATH');
+
+        ROIs = {'VOT_sem_averages', 'IFG_sem_averages'};
+        tcktype       = {'sem'};  %, 'perc'};
+        connections   = {'VOT2IFG'}; %, 'VOT2PPC', 'PPC2IFG'};
         dilateLabelBy = '1';
         setenv('FREESURFER_HOME', fshome); 
         setenv('SUBJECTS_DIR', fs_SUBJECTS_DIR);
-        oldPath = getenv('PATH');
+%         oldPath = getenv('PATH');
 %         setenv('PATH', ...
 %                 ['/bcbl/home/home_g-m/glerma/GIT/mrtrix3/release/bin:' ...
 %                 '/bcbl/home/home_g-m/glerma/GIT/mrtrix3/scripts:' ...
@@ -463,12 +472,18 @@ if(0)
             coord2(4) = sphR;
             roi2 = strjoin(arrayfun(@(x) num2str(x),coord2,'UniformOutput',false),',');
             
-            cmd_str = ['tckedit ' ...
-                       '-include ' roi1  ' ' ...
+%             cmd_str = ['tckedit ' ...
+%                        '-include ' roi1  ' ' ...
+%                        '-include ' roi2  ' ' ... %'-ends_only ' ... 
+%                          [mrtrixdir filesep WholeTractogramName] ' ' ...
+%                          [mrtrixdir filesep 'sinEndsOnly_' tctname]];
+            cmd_str = ['tckgen -algorithm iFOD2  ' ...
+                       '-seed_sphere ' roi1  ' ' ...
                        '-include ' roi2  ' ' ...
-                       '-ends_only ' ... 
-                         [mrtrixdir filesep WholeTractogramName] ' ' ...
-                         [mrtrixdir filesep tctname]];
+                       '-act ' mrtrixdir filesep 'data_aligned_trilin_noMEC_5tt.mif ' ...
+                       '-number 5000 ' ...
+                       mrtrixdir filesep 'data_aligned_trilin_noMEC_wmCsd_lmax4.mif ' ...
+                       mrtrixdir filesep 'vMC_ILF_UNC_v01.tck'];
             bkgrnd = false;
             verbose = false;
             mrtrixVersion = 3;

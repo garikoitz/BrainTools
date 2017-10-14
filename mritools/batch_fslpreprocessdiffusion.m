@@ -14,13 +14,15 @@ function batch_fslpreprocessdiffusion(subName, AnalysisDir, ...
 % Example:
 % 
 
-% AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS'
+% subName = 'S041'
+% % AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS'
 % % AnalysisDir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS'
-% subName = 'S002'
+% AnalysisDir = '/bcbl/home/home_g-m/glerma/00local/PROYECTOS/dr/ANALYSIS'
+% subName = 'S041'
 
 % doPreProc = 0
 % doDtiInit = 0
-% doAfqCreate = 1
+% doAfqCreate = -5
 % doAfqRun = 0
 %
 % Edited by GLU on June 2016

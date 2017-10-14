@@ -38,7 +38,7 @@ basedir = fullfile(DWIdir,subName);
 rawdir = fullfile(DWIdir,subName, 'raw');
 if ~exist(rawdir, 'dir'), mkdir(rawdir), end
 t1dir = fullfile(retdir, subName, 'anat');
-dmridir = fullfile(basedir,'dmri');
+dmridir = fullfile(basedir,['dmri' shell]);
 aparcAsegDir = fullfile(FSdir, subName, 'mri');
 fsp = filesep;
 
@@ -168,7 +168,7 @@ end
 %         subname = subs(ns).name
 %         % Folders
 %         DWIdir = '/bcbl/home/public/Gari/MINI/ANALYSIS/DWI';
-%         dmridir = fullfile(DWIdir, subname, 'dmri');
+%         dmridir = fullfile(DWIdir, subname, 'dmri*');
 %         mrtrixdir = fullfile(dmridir, 'noNorm_dti90trilin','mrtrix');
 %         wmResponse = fullfile(mrtrixdir, 'data_aligned_trilin_noMEC_wmResponse.txt');
 %         gmResponse = fullfile(mrtrixdir, 'data_aligned_trilin_noMEC_gmResponse.txt');

@@ -87,7 +87,7 @@ end
 
 
 % Directory to save everything
-outdir = fullfile(basedir,'dmri');
+outdir = fullfile(dmridir);
 mrtrixdiir = fullfile(outdir, ['dti' shell 'trilin'],'mrtrix');
 
 %% doPreProc: This is mostly done with command line calls to FSL

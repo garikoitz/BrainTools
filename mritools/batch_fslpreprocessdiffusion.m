@@ -16,8 +16,8 @@ function batch_fslpreprocessdiffusion(subName, AnalysisDir, shell, ...
 % 
 % subName = 'S041'
 % % AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS'
-% AnalysisDir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS'
-% % AnalysisDir = '/bcbl/home/home_g-m/glerma/00local/PROYECTOS/dr/ANALYSIS'
+% % AnalysisDir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS'
+% AnalysisDir = '/bcbl/home/home_g-m/glerma/00local/PROYECTOS/dr/ANALYSIS'
 % shell = '1000'
 % 
 % doPreProc = 1
@@ -56,22 +56,22 @@ b0 = dir(fullfile(rawdir,'*d6b0*.nii')); % grab post-anterior encoded file
 % The dwell time is exactly the same of the example = 0.095 
 % (Calculated from echo spacing 0.75 and EPI factor 128)
 
-
+dMRIFiles = {};
 switch shell
     case {'1000'}  % Use singleShell b = 1000
-        dMRIFiles1000{1}=fullfile(rawdir,b0(1).name);
-        dMRIFiles1000{2}=fullfile(rawdir,d30(1).name);
+        dMRIFiles{1}=fullfile(rawdir,b0(1).name);
+        dMRIFiles{2}=fullfile(rawdir,d30(1).name);
         pe_mat = [0 1 0; 0 -1 0];
         dwellTime = 0.095;
     case {'2500'}  % Use singleShell b = 2500
-        dMRIFiles2500{1}=fullfile(rawdir,b0(1).name);
-        dMRIFiles2500{3}=fullfile(rawdir,d60(1).name);
+        dMRIFiles{1}=fullfile(rawdir,b0(1).name);
+        dMRIFiles{2}=fullfile(rawdir,d60(1).name);
         pe_mat = [0 1 0; 0 -1 0];
         dwellTime = 0.095;            
     case {'MS'}  % Use multishell
-        dMRIFilesMS{1}=fullfile(rawdir,b0(1).name);
-        dMRIFilesMS{2}=fullfile(rawdir,d30(1).name);
-        dMRIFilesMS{3}=fullfile(rawdir,d60(1).name);
+        dMRIFiles{1}=fullfile(rawdir,b0(1).name);
+        dMRIFiles{2}=fullfile(rawdir,d30(1).name);
+        dMRIFiles{3}=fullfile(rawdir,d60(1).name);
         pe_mat = [0 1 0; 0 -1 0; 0 -1 0];
         dwellTime = 0.095;        
     otherwise

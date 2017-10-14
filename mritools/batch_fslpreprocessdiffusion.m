@@ -1,4 +1,4 @@
-function batch_fslpreprocessdiffusion(subName, AnalysisDir, ...
+function batch_fslpreprocessdiffusion(subName, AnalysisDir, shell, ...
                                       doPreProc, doBias,...
                                       doDtiInit, doAfqCreate, doAfqRun)
 %% GLU MINI project adapted from: BDE lab preprocessing for diffusion data
@@ -13,16 +13,16 @@ function batch_fslpreprocessdiffusion(subName, AnalysisDir, ...
 %
 % Example:
 % 
-
+% 
 % subName = 'S041'
 % % AnalysisDir = '/bcbl/home/public/Gari/MINI/ANALYSIS'
-% % AnalysisDir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS'
-% AnalysisDir = '/bcbl/home/home_g-m/glerma/00local/PROYECTOS/dr/ANALYSIS'
-% subName = 'S041'
-
-% doPreProc = 0
+% AnalysisDir = '/Users/gari/Documents/BCBL_PROJECTS/MINI/ANALYSIS'
+% % AnalysisDir = '/bcbl/home/home_g-m/glerma/00local/PROYECTOS/dr/ANALYSIS'
+% shell = '1000'
+% 
+% doPreProc = 1
 % doDtiInit = 0
-% doAfqCreate = -5
+% doAfqCreate = 0
 % doAfqRun = 0
 %
 % Edited by GLU on June 2016
@@ -47,18 +47,6 @@ d30 = dir(fullfile(rawdir,'*d35b1000*.nii'));
 d60 = dir(fullfile(rawdir,'*d65b2500*.nii'));
 b0 = dir(fullfile(rawdir,'*d6b0*.nii')); % grab post-anterior encoded file 
 
-
-dMRIFiles{1}=fullfile(rawdir,b0(1).name);
-dMRIFiles{2}=fullfile(rawdir,d30(1).name);
-dMRIFiles{3}=fullfile(rawdir,d60(1).name);
-% Bvals and Bvecs files
-for ii = 1:length(dMRIFiles)
-    bvals{ii} = [prefix(prefix(dMRIFiles{ii})) '_bvals'];
-    bvecs{ii} = [prefix(prefix(dMRIFiles{ii})) '_bvecs'];
-end
-
-
-
 % Phase encode matrix. This denotes, for each volume, which direction is
 % the phase encode
 % Edit GLU: See here the info used for MINI data in Siemens TRIO
@@ -67,16 +55,44 @@ end
 % and 6xb0 with P>>A (this is y=1)
 % The dwell time is exactly the same of the example = 0.095 
 % (Calculated from echo spacing 0.75 and EPI factor 128)
-pe_mat = [0 1 0; 0 -1 0; 0 -1 0];
-dwellTime = 0.095;
+
+
+switch shell
+    case {'1000'}  % Use singleShell b = 1000
+        dMRIFiles1000{1}=fullfile(rawdir,b0(1).name);
+        dMRIFiles1000{2}=fullfile(rawdir,d30(1).name);
+        pe_mat = [0 1 0; 0 -1 0];
+        dwellTime = 0.095;
+    case {'2500'}  % Use singleShell b = 2500
+        dMRIFiles2500{1}=fullfile(rawdir,b0(1).name);
+        dMRIFiles2500{3}=fullfile(rawdir,d60(1).name);
+        pe_mat = [0 1 0; 0 -1 0];
+        dwellTime = 0.095;            
+    case {'MS'}  % Use multishell
+        dMRIFilesMS{1}=fullfile(rawdir,b0(1).name);
+        dMRIFilesMS{2}=fullfile(rawdir,d30(1).name);
+        dMRIFilesMS{3}=fullfile(rawdir,d60(1).name);
+        pe_mat = [0 1 0; 0 -1 0; 0 -1 0];
+        dwellTime = 0.095;        
+    otherwise
+        error('Unknown shell, valid values are MS, 1000 and 2500')
+end
+
+
+% Bvals and Bvecs files
+for ii = 1:length(dMRIFiles)
+    bvals{ii} = [prefix(prefix(dMRIFiles{ii})) '_bvals'];
+    bvecs{ii} = [prefix(prefix(dMRIFiles{ii})) '_bvecs'];
+end
+
 
 % Directory to save everything
 outdir = fullfile(basedir,'dmri');
-mrtrixdiir = fullfile(outdir, 'dti90trilin','mrtrix');
+mrtrixdiir = fullfile(outdir, ['dti' shell 'trilin'],'mrtrix');
 
 %% doPreProc: This is mostly done with command line calls to FSL
 if doPreProc
-    fsl_preprocess(dMRIFiles, bvecs, bvals, pe_mat, outdir, dwellTime);
+    fsl_preprocess(dMRIFiles, bvecs, bvals, pe_mat, outdir, dwellTime, shell);
 end
 
 %% doBias: anadido a posteriori como parte de mrTrix quantitative analysis para obtener AFD

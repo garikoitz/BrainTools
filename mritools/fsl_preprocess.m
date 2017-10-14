@@ -1,4 +1,4 @@
-function fsl_preprocess(dwi_files, bvecs_file, bvals_file, pe_dir, outdir,dwellTime)
+function fsl_preprocess(dwi_files, bvecs_file, bvals_file, pe_dir, outdir,dwellTime,shell)
 % Correct for EPI distortions, eddy currents and motion with FSL
 %
 % dwi_files  = Cell array of paths to niftis with alternating PE directions
@@ -151,19 +151,23 @@ copyfile('bvals_cat.bval','eddy/bvals');
 movefile([outname '.nii.gz'],'eddy/data.nii.gz')
 copyfile('topup_b0_brain_mask.nii.gz', 'eddy/nodif_brain_mask.nii.gz')
 
-%% Run dtifit: no deberia hacer esto, yo tengo multishell
-% eddyNii   = fullfile(pwd,'eddy/data.nii.gz');
-% eddyBvecs = fullfile(pwd,'eddy/bvecs');
-% eddyBvals = fullfile(pwd,'eddy/bvals');
-% mask      = fullfile(pwd,'eddy/nodif_brain_mask.nii.gz');
-% dtidir    = fullfile(pwd,'dtifit');
-% dtiOut    = fullfile(dtidir,'dti');
-% if ~exist(dtidir,'dir')
-%     mkdir(dtidir);
-% end
-% cmd = sprintf('dtifit --data=%s --out=%s --mask=%s --bvecs=%s --bvals=%s',...
-%     eddyNii, dtiOut, mask, eddyBvecs, eddyBvals);
-% system(cmd);
+%% Run dtifit
+if ~strcmp(shell, 'MS')
+    eddyNii   = fullfile(pwd,'eddy/data.nii.gz');
+    eddyBvecs = fullfile(pwd,'eddy/bvecs');
+    eddyBvals = fullfile(pwd,'eddy/bvals');
+    mask      = fullfile(pwd,'eddy/nodif_brain_mask.nii.gz');
+    dtidir    = fullfile(pwd,'dtifit');
+    dtiOut    = fullfile(dtidir,'dti');
+    if ~exist(dtidir,'dir')
+        mkdir(dtidir);
+    end
+    cmd = sprintf('dtifit --data=%s --out=%s --mask=%s --bvecs=%s --bvals=%s',...
+        eddyNii, dtiOut, mask, eddyBvecs, eddyBvals);
+    system(cmd);
+else
+    disp('It is multishell data, we are not fitting the tensor model.')
+end
 
 %% Run bedpostx
 %system('bedpostx eddy')

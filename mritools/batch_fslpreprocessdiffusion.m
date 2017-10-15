@@ -240,14 +240,14 @@ if doAfqCreate
                      'sub_group', [0], ...
                      'sub_names', [subName],...
                      'computeCSD',1);
-    save(fullfile(basedir, 'afqOutAfqCreate'), 'afq')
+    save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate']), 'afq')
 end
 
 %% doAfqRun
 if doAfqRun
-    load(fullfile(basedir, 'afqOutAfqCreate.mat'))
+    load(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate.mat']))
     afq = AFQ_run([],[],afq);
-    save(fullfile(basedir, 'afqOutAfqRun'), 'afq')
+    save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqRun']), 'afq')
 end
 
 

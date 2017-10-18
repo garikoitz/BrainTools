@@ -34,11 +34,18 @@ function batch_fslpreprocessdiffusion(subName, AnalysisDir, shell, ...
 DWIdir = fullfile(AnalysisDir, 'DWI');
 retdir = fullfile(AnalysisDir, 'ret');
 FSdir = fullfile(AnalysisDir, 'freesurferacpc');
+qMRIdir = '/bcbl/home/public/Gari/MINI/ANALYSIS/qMRI_acpc'
+qMRIsubPATH = fullfile(qMRIdir, subName, 'OutPutFiles_1','BrainMaps')
 basedir = fullfile(DWIdir,subName);
 rawdir = fullfile(DWIdir,subName, 'raw');
 if ~exist(rawdir, 'dir'), mkdir(rawdir), end
 t1dir = fullfile(retdir, subName, 'anat');
-dmridir = fullfile(basedir,['dmri' shell]);
+dmridir = fullfile(basedir,['dmri' shell 'mrtrix']);
+
+if ~exist(dmridir)
+    mkdir(dmridir)
+end
+
 aparcAsegDir = fullfile(FSdir, subName, 'mri');
 fsp = filesep;
 
@@ -88,7 +95,7 @@ end
 
 % Directory to save everything
 outdir = fullfile(dmridir);
-mrtrixdiir = fullfile(outdir, ['dti' shell 'trilin'],'mrtrix');
+% mrtrixdiir = fullfile(outdir, ['dti' shell 'trilin'],'mrtrix');
 
 %% doPreProc: This is mostly done with command line calls to FSL
 if doPreProc
@@ -192,9 +199,8 @@ end
 
 
 % Set up t1 path and the params that are common
-% t1 = fullfile(t1dir,'t1_std_acpc.nii.gz'); % Path to the acpc t1-weighted image
-% t1 = fullfile(t1dir,'t1_std_acpc.nii.gz');
-% copyfile(t1, dmridir); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
+copyfile(fullfile(basedir,'t1_std_acpc.nii.gz'), ...
+         fullfile(dmridir,'t1_std_acpc.nii.gz')); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
 t1 = fullfile(dmridir, 't1_std_acpc.nii.gz');
 
 aparcAseg = fullfile(aparcAsegDir, 'aparc+aseg.mgz');
@@ -207,7 +213,6 @@ params.phaseEncodeDir=2; % AP phase encode, 1 is for R>>L (2 = A/P 'col')
 params.clobber=1; % Overwrite anything previously done
 params.fitMethod='ls'; % 'ls, or 'rt' for robust tensor fitting (longer)
 params.dt6BaseName = ''
-params.tensorFitting = false; % No lo uso para nada, que me haga el registro con la anatomica y ya
 
 % Ahora los archivos data.nii.g apuntan a los normalizados por mrtrix
 dtEddy = fullfile(dmridir,'eddy','data.nii.gz'); % Path to the data
@@ -234,12 +239,21 @@ dt6dirs = horzcat({fileparts(dt6FileName{1})});
 % To run AFQ in test mode so it will go quickly
 % afq = AFQ_Create('sub_dirs',dt6dirs,'sub_group',[0 0],'run_mode','test');
 
+
 % To run AFQ using mrtrix for tractography
 if doAfqCreate
+    % Delete old version if exists
+    delete(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate.mat']))
+    % Create a new one
     afq = AFQ_Create('sub_dirs',dt6dirs,...
                      'sub_group', [0], ...
                      'sub_names', [subName],...
                      'computeCSD',1);
+    % Create paths to qMRI images. Only 1 subject, so it is always 1.
+    t1Path{1}  = fullfile(qMRIsubPATH, 'T1_map_Wlin.nii.gz');
+    mtvPath{1} = fullfile(qMRIsubPATH, 'TV_map.nii.gz');
+    afq = AFQ_set(afq, 'images', t1Path);
+    afq = AFQ_set(afq, 'images', mtvPath);
     save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate']), 'afq')
 end
 
@@ -249,6 +263,7 @@ if doAfqRun
     afq = AFQ_run([],[],afq);
     save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqRun']), 'afq')
 end
+
 
 
 

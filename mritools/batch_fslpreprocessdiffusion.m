@@ -1,6 +1,8 @@
 function batch_fslpreprocessdiffusion(subName, AnalysisDir, shell, ...
                                       doPreProc, doBias,...
-                                      doDtiInit, doAfqCreate, doAfqRun)
+                                      doDtiInit, doAfqCreate, ...
+                                      doAfqRun, doCreateProfiles)
+dataWhere = 'HCPblack';  % 'HCPbcbl', 'HCPblack', 'MINIbcbl'                                      
 %% GLU MINI project adapted from: BDE lab preprocessing for diffusion data
 %
 %
@@ -273,9 +275,28 @@ end
 %% doAfqRun
 if doAfqRun
     load(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate.mat']))
+    % Now add the new FA calculated by mrtrix and create a new measurement
+    switch dataWhere
+        case {'MINIbcbl'}
+            if strcmp(shell,'1000'); ndirs='30';end;
+            if strcmp(shell,'2500'); ndirs='60';end;
+            mrtrixPath = fullfile(dmridir, ['dti' ndirs 'trilin'], 'mrtrix');
+        case {'HCPbcbl', 'HCPblack'}
+            mrtrixPath = fullfile(dmridir, 'dti', 'mrtrix');
+        otherwise
+            disp('Unknown dataWhere')
+    end
+    faPath{1}  = fullfile(mrtrixPath, 'data_aligned_trilin_noMEC_fa.nii.gz');
+    afq = AFQ_set(afq, 'images', faPath);
     afq = AFQ_run([],[],afq);
     save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqRun']), 'afq')
 end
+
+%% doCreateProfiles
+if doCreateProfiles
+    disp('todo')
+end
+    
 
 
 

@@ -40,8 +40,10 @@ basedir = fullfile(DWIdir,subName);
 rawdir = fullfile(DWIdir,subName, 'raw');
 if ~exist(rawdir, 'dir'), mkdir(rawdir), end
 t1dir = fullfile(retdir, subName, 'anat');
-dmridir = fullfile(basedir,['dmri' shell 'mrtrix']);
-
+% EDIT ALWAYS
+shell = num2str(shell);  % just in case, in HCP are int
+dmridir = fullfile(basedir,['dmri' shell]);  %  'mrtrix']); 
+% EDIT ALWAYS
 if ~exist(dmridir)
     mkdir(dmridir)
 end
@@ -82,7 +84,8 @@ switch shell
         pe_mat = [0 1 0; 0 -1 0; 0 -1 0];
         dwellTime = 0.095;        
     otherwise
-        error('Unknown shell, valid values are MS, 1000 and 2500')
+        % error('Unknown shell, valid values are MS, 1000 and 2500')
+	disp('We dont want to throw an error in HCP');
 end
 
 
@@ -199,10 +202,15 @@ end
 
 
 % Set up t1 path and the params that are common
-copyfile(fullfile(basedir,'t1_std_acpc.nii.gz'), ...
-         fullfile(dmridir,'t1_std_acpc.nii.gz')); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
-t1 = fullfile(dmridir, 't1_std_acpc.nii.gz');
+% copyfile(fullfile(basedir,'t1_std_acpc.nii.gz'), ...
+%         fullfile(dmridir,'t1_std_acpc.nii.gz')); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
+copyfile(fullfile(basedir,'T1w', 'T1w_acpc_dc_restore_1.25.nii.gz'), ...
+         fullfile(dmridir,'T1w_acpc_dc_restore_1.25.nii.gz')); % Otherwise it won't find it downstream, since in the dt6.mat files.t1 only the name is stores
+% t1 = fullfile(dmridir, 't1_std_acpc.nii.gz');
+t1 = fullfile(dmridir, 'T1w_acpc_dc_restore_1.25.nii.gz');
 
+% For HCP, change dir
+aparcAsegDir = fullfile(AnalysisDir, 'freesurfer',subName, 'T1w');
 aparcAseg = fullfile(aparcAsegDir, 'aparc+aseg.mgz');
 % copyfile(aparcAseg, dmridir);
 
@@ -222,13 +230,13 @@ params.bvecsFile = fullfile(dmridir,'eddy','bvecs'); % Path to the bvecs
 if doDtiInit
     dt6FileName = dtiInit(dtEddy,t1,params); % Run dtiInit to preprocess data
 else
-    dtiDir = dir(fullfile(dmridir,'dti*trilin*'));
-    if dtiDir.isdir && exist(fullfile(dmridir, dtiDir.name,'dt6.mat'),'file' )
-        dt6FileName = {fullfile(dmridir, dtiDir.name,'dt6.mat')};
-    else
-        error('Cannot find dt6.mat file')
-    end
-    
+    % dtiDir = dir(fullfile(dmridir,'dti*trilin*'));  % for MINI
+    % if dtiDir.isdir && exist(fullfile(dmridir, dtiDir.name,'dt6.mat'),'file' )
+    %     dt6FileName = {fullfile(dmridir, dtiDir.name,'dt6.mat')};
+    % else
+    %     error('Cannot find dt6.mat file')
+    % end
+    dt6FileName = {fullfile(dmridir,'dti','dt6.mat')};    
 end
 
 %% doAfqCreate
@@ -242,19 +250,24 @@ dt6dirs = horzcat({fileparts(dt6FileName{1})});
 
 % To run AFQ using mrtrix for tractography
 if doAfqCreate
+    cd(dmridir)  
     % Delete old version if exists
-    delete(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate.mat']))
+    if exist(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate.mat']))
+        delete(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate.mat']))
+    end
     % Create a new one
+    disp(['\n\n This is the dt6dirs{1}: ' dt6dirs{1}])
     afq = AFQ_Create('sub_dirs',dt6dirs,...
                      'sub_group', [0], ...
                      'sub_names', [subName],...
                      'computeCSD',1);
-    % Create paths to qMRI images. Only 1 subject, so it is always 1.
-    t1Path{1}  = fullfile(qMRIsubPATH, 'T1_map_Wlin.nii.gz');
-    mtvPath{1} = fullfile(qMRIsubPATH, 'TV_map.nii.gz');
-    afq = AFQ_set(afq, 'images', t1Path);
-    afq = AFQ_set(afq, 'images', mtvPath);
-    save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate']), 'afq')
+    % FOR MINI: Create paths to qMRI images. Only 1 subject, so it is always 1.
+    % Removing it for HCP in blackn 
+    % t1Path{1}  = fullfile(qMRIsubPATH, 'T1_map_Wlin.nii.gz');
+    % mtvPath{1} = fullfile(qMRIsubPATH, 'TV_map.nii.gz');
+    % afq = AFQ_set(afq, 'images', t1Path);
+    % afq = AFQ_set(afq, 'images', mtvPath);
+    % save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreateq']), 'afq')
 end
 
 %% doAfqRun

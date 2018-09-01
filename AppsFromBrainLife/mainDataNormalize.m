@@ -22,7 +22,7 @@ cd ([DWIdir filesep subName filesep 'raw'])
 
 % load config.json
 % config = loadjson('config.json');
-% GLU: instead of reading it, copy it here. 
+% GLU: instead of reading it, copy it here.
 % {
 %         "bvals": "/input/dwi.bvals",
 %         "bvecs": "/input/dwi.bvecs",
@@ -31,9 +31,9 @@ cd ([DWIdir filesep subName filesep 'raw'])
 %         "yflip": false,
 %         "zflip": false
 % }
-config.bvals = [DWIdir filesep subName filesep 'T1w/Diffusion/bvals'];
-config.bvecs = [DWIdir filesep subName filesep 'T1w/Diffusion/bvecs'];
-config.dwi   = [DWIdir filesep subName filesep 'T1w/Diffusion/data.nii.gz'];
+config.bvals = [DWIdir filesep subName filesep 'T1w/Diffusion_7T/bvals'];
+config.bvecs = [DWIdir filesep subName filesep 'T1w/Diffusion_7T/bvecs'];
+config.dwi   = [DWIdir filesep subName filesep 'T1w/Diffusion_7T/data.nii.gz'];
 config.xflip = true; 
 config.yflip = false;
 config.zflip = false;

@@ -12,13 +12,20 @@ fsp = filesep;
 
 % Folder Names
 % LOCAL
+%{
 MINIDIR = '/Users/gari/Documents/BCBL_PROJECTS/MINI';
 fsbin = '/Applications/freesurfer6/bin';
 fshome = '/Applications/freesurfer6'; 
+%}
+
 % SERVER
-% MINIDIR = '/bcbl/home/public/Gari/MINI';
-% fsbin = '/opt/freesurfer-5.3.0/freesurfer/bin';
-% fshome = '/opt/freesurfer-5.3.0/freesurfer'; 
+%
+MINIDIR = '/bcbl/home/public/Gari/MINI';
+fsbin = '/opt/freesurfer-5.3.0/freesurfer/bin';
+fshome = '/opt/freesurfer-5.3.0/freesurfer'; 
+%}
+
+
 
 AnalysisDir = [MINIDIR fsp 'ANALYSIS'];
 fs_SUBJECTS_DIR = fullfile(AnalysisDir, 'freesurferacpc');
@@ -36,15 +43,17 @@ fMRIDIR = fullfile(AnalysisDir, 'fMRI_SPM', 'block', 'data');
 
 
 %%%%%   CLUSTER PARPOOL    %%%%%%
-% % myclusterLocal = parcluster('local');
-% % myclusterLocal.NumWorkers
-% [st, re] = system('qstat -g c | grep matlab.q');
-% [Tok, Rem] = strtok(re);
-% [Tok, Rem] = strtok(Rem);
-% [Tok, Rem] = strtok(Rem);
-% [Tok, Rem] = strtok(Rem);
-% [available] = strtok(Rem)
-% parpool('ips_base', str2num(available))
+% myclusterLocal = parcluster('local');
+% myclusterLocal.NumWorkers
+%{
+[st, re] = system('qstat -g c | grep matlab.q');
+[Tok, Rem] = strtok(re);
+[Tok, Rem] = strtok(Rem);
+[Tok, Rem] = strtok(Rem);
+[Tok, Rem] = strtok(Rem);
+[available] = strtok(Rem)
+parpool('ips_base', str2num(available))
+%}
 %%%%% END CLUSTER PARPOOL  %%%%%%
 
 %% Encontrar VOF PARC y pasarlos a surfaces en fsaverage
@@ -74,7 +83,24 @@ if(0)
   
 %   fs_roisFromAllLabels(fsIn,outDir,type,refT1);
 
-    wholebrainfgPath= fullfile(dmridir, 'dti90trilin', 'fibers'); 
+    % %%%%%%%%% NOTE  %%%%%%%%%%%%    
+    %{
+    'dti90trilin' has been edited to 'noNorm_dti90trilin'.
+    The noNorm_ version is the original one. Afterwards I created the 
+    the normalized version because it was a requirement for mrtrix's SIFT2
+    I tried to reutilize all the files that where useful. 
+    Be careful with the not normalized version, as there was no space in
+    public, I had to create symbolic links to my folder and store the new
+    analyses there. It can be a little bit messy.  
+    
+    
+    %}
+    % %%%%%%%%% NOTE  %%%%%%%%%%%%        
+
+
+
+    % wholebrainfgPath= fullfile(dmridir, 'dti90trilin', 'fibers');
+    wholebrainfgPath= fullfile(dmridir, 'noNorm_dti90trilin', 'fibers'); 
     wholebrainfg= fullfile(wholebrainfgPath, 'WholeBrainFG.mat'); 
     fgMori = dtiReadFibers(fullfile(wholebrainfgPath, 'MoriGroups.mat'));
     L_arcuate= fgMori(19);
@@ -85,11 +111,16 @@ if(0)
     thresh= [];
     v_crit= [];
     % GLU dt= dtiLoadDt6(fullfile(dmridir, 'dti90trilin', 'dt6.mat'));
-    load(fullfile(dmridir, 'dti90trilin', 'dt6.mat'));
-    dt.dataFile = fullfile(dmridir, 'dti90trilin')
+    % load(fullfile(dmridir, 'dti90trilin', 'dt6.mat'));
+    % dt.dataFile = fullfile(dmridir, 'dti90trilin');
+    load(fullfile(dmridir, 'noNorm_dti90trilin', 'dt6.mat'));
+    dt.dataFile = fullfile(dmridir, 'noNorm_dti90trilin');
     savefiles= true;
     arcThresh= [];
     parcThresh= [];
+    
+    % LEave this commented, I want to obtain only ARCUATE
+    %{
     % Obtain the tracts of interest
     [L_VOF, R_VOF, L_pArc, R_pArc, L_pArc_vot, R_pArc_vot] = ...
                                     AFQ_FindVOF(wholebrainfg,...
@@ -109,6 +140,9 @@ if(0)
     % % and now load them, just to be shure they work fine.
     % load( fullfile(outdir, 'VOF_all.mat'));
     % 
+    
+    
+    
     %% RENDER
     % % Read the ROIs in the cortex
 %     roi_L_fusiform = dtiReadRoi(fullfile(dmridir,'ROIs', ...
@@ -136,15 +170,19 @@ if(0)
     system([FSLDIR fsp 'bin' fsp 'fslmaths ' dmridir fsp 'aparc+aseg.nii.gz '...
             '-thr 1000 -bin ' dmridir fsp 'segmentation.nii.gz']);
 %     % Y ahora creo el mesh
-%     im = [dmridir fsp 'segmentation.nii.gz'];
-%     % msh = AFQ_meshCreate(im, 'color', [.8 .7 .6])
+%}     
+    
+     im = [dmridir fsp 'segmentation.nii.gz'];
+   % msh = AFQ_meshCreate(im, 'color', [.8 .7 .6])
 % 
 % 
 % 
-% 
+
+    
     %% Obtener el file con el intersect entre fiber y cortex
     % por ahora solo hago el posterior arcuate y el VOF
-    fiberRois = {L_VOF, L_pArc, L_pArc_vot};
+    % fiberRois = {L_VOF, L_pArc, L_pArc_vot};
+    fiberRois = {L_arcuate};
     for fr =1:length(fiberRois)
         fg = fiberRois{fr};
         segmentation = niftiRead(im);
@@ -212,7 +250,8 @@ if(0)
         % en fs ahora
         segRead = MRIread([dmridir fsp 'segmentation.nii.gz']);
         segRead.vol = permute(fdNii.data, [2 1 3]);  % mierdas de x,y en Matlab
-        MRIwrite(segRead, [dmridir fsp 'NORM_' fg.name '_tracts.nii.gz']);
+        MRIwrite(segRead, [dmridir fsp strrep(fg.name,' ','_') '_tracts.nii.gz']);
+        % MRIwrite(segRead, [dmridir fsp 'NORM_' fg.name '_tracts.nii.gz']);
 
 
         % Hay que pensar si hago el paso a la superficie con todos los
@@ -223,9 +262,12 @@ if(0)
         % los rois. Lo de los tractos tiene que ser bidireccional. 
 
         % Y ahora los convertimos a superficie usando fs
-        movname    = fullfile(dmridir, ['NORM_' fg.name '_tracts.nii.gz']);
-        oname      = fullfile(dmridir, ['NORM_' fg.name '_tracts.mgh']);
-        oname305   = fullfile(dmridir, ['NORM_' fg.name '_tracts305.mgh']);
+        movname    = fullfile(dmridir, [strrep(fg.name,' ','_') '_tracts.nii.gz']);
+        oname      = fullfile(dmridir, [strrep(fg.name,' ','_') '_tracts.mgh']);
+        oname305   = fullfile(dmridir, [strrep(fg.name,' ','_') '_tracts305.mgh']);
+        % movname    = fullfile(dmridir, ['NORM_' fg.name '_tracts.nii.gz']);
+        % oname      = fullfile(dmridir, ['NORM_' fg.name '_tracts.mgh']);
+        % oname305   = fullfile(dmridir, ['NORM_' fg.name '_tracts305.mgh']);
 
         % fshomecajal02 = '/usr/local/freesurfer';
         % fsbincajal02 = '/usr/local/freesurfer/bin';
@@ -633,7 +675,7 @@ end
 
 %% Tengo que crear los simbolic links a los DWI
 % Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
-if(1)
+if(0)
     for ns = 1 : length(subs)
         subname = subs(ns).name
 
@@ -667,7 +709,7 @@ end
 
 %% Los archivos normalizados son .mif, convertirlos a .nii.gz para que lea mrDiffussion y seguir con el pipeline de antes
 % Lo iba a hacer fuera, pero tengo todas las variables aqui ya...
-if(1)
+if(0)
     for ns = 1 : length(subs)
         %setenv('PATH','/bcbl/home/home_g-m/glerma/GIT/mrtrix3/release/bin:/bcbl/home/home_g-m/glerma/GIT/mrtrix3/scripts');
         subname = subs(ns).name

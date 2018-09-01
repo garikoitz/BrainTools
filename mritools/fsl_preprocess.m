@@ -1,4 +1,5 @@
-function fsl_preprocess(dwi_files, bvecs_file, bvals_file, pe_dir, outdir,dwellTime,shell)
+function fsl_preprocess(dwi_files, bvecs_file, bvals_file, pe_dir, outdir, ...
+                        dwellTime,shell,runTopup)
 % Correct for EPI distortions, eddy currents and motion with FSL
 %
 % dwi_files  = Cell array of paths to niftis with alternating PE directions
@@ -91,9 +92,9 @@ dlmwrite(fullfile(outdir,'bvecs_cat.bvec'),bvecs_cat,'\t');
 dlmwrite(fullfile(outdir,'bvals_cat.bval'),bvals_cat,'\t');
 
 %% run topup as a system call
-cmd = sprintf('topup --imain=%s --datain=%s --config=b02b0.cnf --out=topup_results --iout=topup_b0',...
-    b0cat_file,acq_file);
-system(cmd);
+    cmd = sprintf('topup --imain=%s --datain=%s --config=b02b0.cnf --out=topup_results --iout=topup_b0',...
+                   b0cat_file, acq_file);
+    system(cmd);
 
 %% brain extraction
 system('fslmaths topup_b0 -Tmean topup_b0');

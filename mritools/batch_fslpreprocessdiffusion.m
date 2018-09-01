@@ -39,9 +39,9 @@ FSdir = fullfile(AnalysisDir, 'freesurferacpc');
 qMRIdir = '/bcbl/home/public/Gari/MINI/ANALYSIS/qMRI_acpc'
 qMRIsubPATH = fullfile(qMRIdir, subName, 'OutPutFiles_1','BrainMaps')
 basedir = fullfile(DWIdir,subName);
-rawdir = fullfile(DWIdir,subName, 'raw');
-if ~exist(rawdir, 'dir'), mkdir(rawdir), end
-t1dir = fullfile(retdir, subName, 'anat');
+% rawdir = fullfile(DWIdir,subName, 'raw');
+% if ~exist(rawdir, 'dir'), mkdir(rawdir), end
+% t1dir = fullfile(retdir, subName, 'anat');
 % EDIT ALWAYS
 shell = num2str(shell);  % just in case, in HCP are int
 dmridir = fullfile(basedir,['dmri' shell]);  %  'mrtrix']); 
@@ -54,9 +54,9 @@ aparcAsegDir = fullfile(FSdir, subName, 'mri');
 fsp = filesep;
 
 % Note glu: conversion from dicom in the ipython notebook file with qsubs
-d30 = dir(fullfile(rawdir,'*d35b1000*.nii'));
-d60 = dir(fullfile(rawdir,'*d65b2500*.nii'));
-b0 = dir(fullfile(rawdir,'*d6b0*.nii')); % grab post-anterior encoded file 
+% d30 = dir(fullfile(rawdir,'*d35b1000*.nii'));
+% d60 = dir(fullfile(rawdir,'*d65b2500*.nii'));
+% b0 = dir(fullfile(rawdir,'*d6b0*.nii')); % grab post-anterior encoded file 
 
 % Phase encode matrix. This denotes, for each volume, which direction is
 % the phase encode
@@ -67,35 +67,35 @@ b0 = dir(fullfile(rawdir,'*d6b0*.nii')); % grab post-anterior encoded file
 % The dwell time is exactly the same of the example = 0.095 
 % (Calculated from echo spacing 0.75 and EPI factor 128)
 
-dMRIFiles = {};
-switch shell
-    case {'1000'}  % Use singleShell b = 1000
-        dMRIFiles{1}=fullfile(rawdir,b0(1).name);
-        dMRIFiles{2}=fullfile(rawdir,d30(1).name);
-        pe_mat = [0 1 0; 0 -1 0];
-        dwellTime = 0.095;
-    case {'2500'}  % Use singleShell b = 2500
-        dMRIFiles{1}=fullfile(rawdir,b0(1).name);
-        dMRIFiles{2}=fullfile(rawdir,d60(1).name);
-        pe_mat = [0 1 0; 0 -1 0];
-        dwellTime = 0.095;            
-    case {'MS'}  % Use multishell
-        dMRIFiles{1}=fullfile(rawdir,b0(1).name);
-        dMRIFiles{2}=fullfile(rawdir,d30(1).name);
-        dMRIFiles{3}=fullfile(rawdir,d60(1).name);
-        pe_mat = [0 1 0; 0 -1 0; 0 -1 0];
-        dwellTime = 0.095;        
-    otherwise
-        % error('Unknown shell, valid values are MS, 1000 and 2500')
-	disp('We dont want to throw an error in HCP');
-end
+% dMRIFiles = {};
+% switch shell
+%     case {'1000'}  % Use singleShell b = 1000
+%         dMRIFiles{1}=fullfile(rawdir,b0(1).name);
+%         dMRIFiles{2}=fullfile(rawdir,d30(1).name);
+%         pe_mat = [0 1 0; 0 -1 0];
+%         dwellTime = 0.095;
+%     case {'2500'}  % Use singleShell b = 2500
+%         dMRIFiles{1}=fullfile(rawdir,b0(1).name);
+%         dMRIFiles{2}=fullfile(rawdir,d60(1).name);
+%         pe_mat = [0 1 0; 0 -1 0];
+%         dwellTime = 0.095;            
+%     case {'MS'}  % Use multishell
+%         dMRIFiles{1}=fullfile(rawdir,b0(1).name);
+%         dMRIFiles{2}=fullfile(rawdir,d30(1).name);
+%         dMRIFiles{3}=fullfile(rawdir,d60(1).name);
+%         pe_mat = [0 1 0; 0 -1 0; 0 -1 0];
+%         dwellTime = 0.095;        
+%     otherwise
+%         % error('Unknown shell, valid values are MS, 1000 and 2500')
+% 	disp('We dont want to throw an error in HCP');
+% end
 
 
 % Bvals and Bvecs files
-for ii = 1:length(dMRIFiles)
-    bvals{ii} = [prefix(prefix(dMRIFiles{ii})) '_bvals'];
-    bvecs{ii} = [prefix(prefix(dMRIFiles{ii})) '_bvecs'];
-end
+% for ii = 1:length(dMRIFiles)
+%     bvals{ii} = [prefix(prefix(dMRIFiles{ii})) '_bvals'];
+%     bvecs{ii} = [prefix(prefix(dMRIFiles{ii})) '_bvecs'];
+% end
 
 
 % Directory to save everything
@@ -263,13 +263,18 @@ if doAfqCreate
                      'sub_group', [0], ...
                      'sub_names', [subName],...
                      'computeCSD',1);
-    % FOR MINI: Create paths to qMRI images. Only 1 subject, so it is always 1.
-    % Removing it for HCP in blackn 
-    % t1Path{1}  = fullfile(qMRIsubPATH, 'T1_map_Wlin.nii.gz');
-    % mtvPath{1} = fullfile(qMRIsubPATH, 'TV_map.nii.gz');
-    % afq = AFQ_set(afq, 'images', t1Path);
-    % afq = AFQ_set(afq, 'images', mtvPath);
-    % save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreateq']), 'afq')
+    switch dataWhere
+        case {'MINIbcbl'}
+            % FOR MINI: Create paths to qMRI images. Only 1 subject, so it is always 1.
+            % Removing it for HCP in blackn 
+            % t1Path{1}  = fullfile(qMRIsubPATH, 'T1_map_Wlin.nii.gz');
+            % mtvPath{1} = fullfile(qMRIsubPATH, 'TV_map.nii.gz');
+            % afq = AFQ_set(afq, 'images', t1Path);
+            % afq = AFQ_set(afq, 'images', mtvPath);
+        otherwise
+            disp('Do not add qMRI files to create profiles')
+    end
+    save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate']), 'afq')
 end
 
 %% doAfqRun
@@ -281,21 +286,26 @@ if doAfqRun
             if strcmp(shell,'1000'); ndirs='30';end;
             if strcmp(shell,'2500'); ndirs='60';end;
             mrtrixPath = fullfile(dmridir, ['dti' ndirs 'trilin'], 'mrtrix');
+            faPath{1}  = fullfile(mrtrixPath, 'data_aligned_trilin_noMEC_fa.nii.gz');
+            afq = AFQ_set(afq, 'images', faPath);
+            afq = AFQ_run([],[],afq);
+            save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqRun']), 'afq')
         case {'HCPbcbl', 'HCPblack'}
             mrtrixPath = fullfile(dmridir, 'dti', 'mrtrix');
+            faPath{1}  = fullfile(mrtrixPath, 'dwi_aligned_trilin_noMEC_fa.nii.gz')
+            afq = AFQ_set(afq, 'images', faPath);
+            % Dont do tracking, I would have done it separately and then run LiFE before this
+            afq = AFQ_run([],[],afq);
+            save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqRun']), 'afq')
         otherwise
             disp('Unknown dataWhere')
     end
-    faPath{1}  = fullfile(mrtrixPath, 'data_aligned_trilin_noMEC_fa.nii.gz');
-    afq = AFQ_set(afq, 'images', faPath);
-    afq = AFQ_run([],[],afq);
-    save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqRun']), 'afq')
 end
 
 %% doCreateProfiles
-if doCreateProfiles
-    disp('todo')
-end
+% if doCreateProfiles
+%    disp('todo')
+% end
     
 
 

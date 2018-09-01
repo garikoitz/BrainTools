@@ -2,6 +2,7 @@ function batch_fslpreprocessdiffusion(projectsDir, projectName, subName, shell, 
                                       doPreProc, doBias,...
                                       doDtiInit, doAfqCreate, ...
                                       doAfqRun, doCreateProfiles)
+dataWhere = 'HCPblack';  % 'HCPbcbl', 'HCPblack', 'MINIbcbl'                                      
 %% GLU MINI project adapted from: BDE lab preprocessing for diffusion data
 %
 %
@@ -143,6 +144,7 @@ switch projectName
         end
     otherwise
         error('This project has not been created yet')
+
 end
 
 
@@ -288,13 +290,13 @@ end
 if doDtiInit
     dt6FileName = dtiInit(dtEddy,t1,params); % Run dtiInit to preprocess data
 else
-    dtiDir = dir(fullfile(dmridir,'dti*trilin*'));
-    if dtiDir.isdir && exist(fullfile(dmridir, dtiDir.name,'dt6.mat'),'file' )
-        dt6FileName = {fullfile(dmridir, dtiDir.name,'dt6.mat')};
-    else
-        error('Cannot find dt6.mat file')
-    end
-    
+    % dtiDir = dir(fullfile(dmridir,'dti*trilin*'));  % for MINI
+    % if dtiDir.isdir && exist(fullfile(dmridir, dtiDir.name,'dt6.mat'),'file' )
+    %     dt6FileName = {fullfile(dmridir, dtiDir.name,'dt6.mat')};
+    % else
+    %     error('Cannot find dt6.mat file')
+    % end
+    dt6FileName = {fullfile(dmridir,'dti','dt6.mat')};    
 end
 
 %% doAfqCreate
@@ -308,14 +310,27 @@ dt6dirs = horzcat({fileparts(dt6FileName{1})});
 
 % To run AFQ using mrtrix for tractography
 if doAfqCreate
+    cd(dmridir)  
     % Delete old version if exists
-    delete(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate.mat']))
+    if exist(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate.mat']))
+        delete(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate.mat']))
+    end
     % Create a new one
+    disp(['\n\n This is the dt6dirs{1}: ' dt6dirs{1}])
     afq = AFQ_Create('sub_dirs',dt6dirs,...
                      'sub_group', [0], ...
                      'sub_names', [subName],...
                      'computeCSD',1);
-    save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreate']), 'afq')
+
+
+    % FOR MINI: Create paths to qMRI images. Only 1 subject, so it is always 1.
+    % Removing it for HCP in blackn 
+    % t1Path{1}  = fullfile(qMRIsubPATH, 'T1_map_Wlin.nii.gz');
+    % mtvPath{1} = fullfile(qMRIsubPATH, 'TV_map.nii.gz');
+    % afq = AFQ_set(afq, 'images', t1Path);
+    % afq = AFQ_set(afq, 'images', mtvPath);
+    save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqCreateq']), 'afq')
+
 end
 
 %% doAfqRun
@@ -344,10 +359,17 @@ if doAfqRun
             AFQ_mrtrix_mrconvert(famif, fanii, 0, 0, '3');
             faPath{1}  = fanii;
             afq = AFQ_set(afq, 'images', faPath);
+        case {'MINIbcbl'}
+            if strcmp(shell,'1000'); ndirs='30';end;
+            if strcmp(shell,'2500'); ndirs='60';end;
+            mrtrixPath = fullfile(dmridir, ['dti' ndirs 'trilin'], 'mrtrix');
+        case {'HCPbcbl', 'HCPblack'}
+            mrtrixPath = fullfile(dmridir, 'dti', 'mrtrix');
         otherwise
-            error('Project unknown')
+            disp('Unknown dataWhere')
     end
-        
+    faPath{1}  = fullfile(mrtrixPath, 'data_aligned_trilin_noMEC_fa.nii.gz');
+    afq = AFQ_set(afq, 'images', faPath);
     afq = AFQ_run([],[],afq);
     save(fullfile(dmridir, [subName '_b' shell '_afqOutAfqRun']), 'afq')
 end
